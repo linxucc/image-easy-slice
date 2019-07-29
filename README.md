@@ -2,20 +2,20 @@
 A python wheel for easy image slice. Slice one image into multiple parts: vertically, horizontally, or by a given grid.
 
 # What for?
-When I'm working on one of my project, which needs to slice some image into even parts, after some search, I'm suprised there's no simple dedicated wheel for this 'standard' job. 
+When I'm working on one of my projects, which needs to slice some images into even parts. After some searching, I'm suprised there's no simple dedicated wheel for this 'standard' job. 
 
-So after the job, I deciced to exetend my little image-slice code snippet into a simple library, and also make it a standalone tool. 
+So after the job, I deciced to exetend my little image-slice code snippet into a simple library, also make it a standalone tool. 
 
 # How does it work?
 This simple piece of software is built on the 'standard' python image library, PIL (or Pillow, roughly it's the same thing). 
 
-Since image slice is not something very difficult to implement, so maybe it's the reason why there's no dedicated wheel when I try to find one.
+Since image slice is not something very hard to implement, so maybe it's the reason why there's no dedicated wheel when I try to find one.
 
-The whole process is pretty simple, PIL handles all the 'image' things, including all the format things, all the IO things, and the 'crop' things. This simple wheel mainly just calcualtes how to crop each slice: the right coodinares, 'width' and 'height'. Then helps you iterate through the image and do the crops.
+The whole process is pretty simple, PIL handles all the 'image' things, including all the format things, all the IO things, and the 'crop' things. This simple wheel mainly just calcualtes how to crop each slice: the right coodinares, 'width' and 'height'. Then it iterate through the image for you, and do the crops.
 
 So what PIL supports, it supports; what PIL can't do, it can't. 
 
-It makes it easy when you need to slice a image, free you from the 'widht' 'height' calculations and crop iterations, which always comes boring, tedius and sometimes confusing. 
+It makes it easy when you need to slice a image, free you from the 'widht' and 'height' calculations and the crop iterations, which always comes boring, tedius and sometimes confusing. 
 
 # How to install
 Now just download the code, future use PIP.
