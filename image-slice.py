@@ -2,20 +2,85 @@ from PIL import Image
 
 '''helper function, calculate the list of width/height of output slices'''
 # return a list, in which contains the calculated width/height of each slice.
-def calculate_slices_size(image_height_or_width, slice_count, step_size):
+
+
+def calculate_slices_size(image_height_or_width, slice_count, step_size, ratio):
     # arguments parsing, validation.
-    assert image_height_or_width>0
-    assert slice_count>=0
-    assert step_size>=0
+    assert image_height_or_width > 0
+    assert slice_count >= 0
+    assert step_size >= 0
     # one of the step_size or slice_count should be zero, or it's a invalid invoke.
-    assert step_size*slice_count == 0
+    assert step_size * slice_count == 0
     # make sure they are not both zero, or it's a invalid invoke.
     assert step_size != slice_count
+    # make sure ratio is a instance of str, even if it's empty.
+    assert isinstance(ratio, str)
 
+    slices_size = []
+    # equal slice
     if slice_count:
-        # equal slice, the step_size should be zero.
+        # equal slice, the step_size should be zero, ratio should be an empty string, or it's a invalid invoke.
         assert step_size == 0
-        #
+        assert not ratio
+        # begin the calculation.
+        base_size = int(image_height_or_width//slice_count)
+        remainder = image_height_or_width - base_size*slice_count
+        for slice in range(slice_count):
+            if remainder>0:
+                size = base_size + 1
+                remainder -= 1
+                slices_size.append(size)
+            else:
+                slices_size.append(base_size)
+
+    # step slice
+    elif step_size:
+        # make sure slice_count is zero, ratio is an empty string, or it's a invalid invoke.
+        assert slice_count == 0
+        assert not ratio
+
+        while(image_height_or_width>0):
+            slices_size.append(step_size)
+            image_height_or_width -= step_size
+
+    # ratio slice
+    else:
+        # make sure it's a ratio slice, other 2 arguments should be 0, or it's a invalid invoke.
+        assert slice_count == 0
+        assert step_size == 0
+        # parse the ratio string
+        ratio_list = ratio.split(':')
+        ratio_list = [int(i) for i in ratio_list]
+        # make sure it's a valid ratio. split by ':', the output should be a list.
+        # for example, '3:2', will be ['3','2']
+        assert ratio_list
+
+        # calculation begins
+        # how many parts in this ratio expression
+        parts_count = len(ratio_list)
+        sum = 0
+        # sum all the ratio numbers
+        for ratio_number in ratio_list:
+            sum += ratio_number
+        # calculate the base size
+        base_size = int(image_height_or_width//sum)
+        remainder = image_height_or_width - base_size*sum
+
+        # distribute the remainder to all the parts.
+        remainder_each = int(remainder//parts_count)
+        remainder_of_remainder = remainder - remainder_each*parts_count
+
+        # final distribute
+        for part in range(parts_count):
+            each_ratio_size = ratio_list[part]*base_size + remainder_each
+            if remainder_of_remainder>0:
+                each_ratio_size += 1
+                remainder_of_remainder -=1
+            slices_size.append(each_ratio_size)
+
+    # make sure the list is not empty
+    assert slices_size
+    return slices_size
 
 
 
@@ -23,6 +88,8 @@ def calculate_slices_size(image_height_or_width, slice_count, step_size):
 # this function should not be called directly, use proxy functions instead, unless you have a strong reason to do so,
 # this function only do one-direction image slice, for grid slice you should use the grid proxy functions.
 # grid slice is implemented in a way of 'slice horizontal first, then for each slice, do the same vertical slice.'
+
+
 def slice_image_one_direction(image,
                 slice_vertical_yn,
                 slice_horizontal_yn,
@@ -31,7 +98,10 @@ def slice_image_one_direction(image,
                 equal_slice_yn,
                 step_slice_yn,
                 step_horizontal,
-                step_vertical):
+                step_vertical,
+                ratio_slice_yn,
+                ratio_horizontal,
+                ratio_vertical):
 
     ### Make sure the arguments are valid ###
 
@@ -150,12 +220,16 @@ def slice_horizontal_by_step(image, step_horizontal):
 def slice_vertical_by_step(image, step_vertical):
     return slice_image_one_direction(image, True, False, 0, 0, False, True, 0, step_vertical)
 
-# grid slice is performed in this way: slice horizontally first, then for each horizontal slice, perform the vertical slice.
+
+# Grid slice is a little different, to make it simple, we slice twice, first horizontal, second vertical.
+
 def slice_to_grid_in_equal(image, vertical_count, horizontal_count):
+    # first step, slice horizontally.
     horizontal_slices = slice_horizontal_in_equal(image, horizontal_count)
     # make sure it's not empty
     assert horizontal_slices
-    # slice each horizontal slice vertically.
+
+    # second step, slice each horizontal slice vertically.
     grid_slices = []
 
     for horizontal_slice in horizontal_slices:
