@@ -358,10 +358,13 @@ def slice_to_grid(image, vertical_mode, vertical_param, horizontal_mode, horizon
 
 
 
-# helper function to save a PIL image to disk. Save to cwd, it's a default behaviour by most programs.
-def save_image_slice(image_slice, file_name):
-    pass #todo: implement the saving.
-
+# helper function to save a list of PIL image to disk. Save to cwd, it's a default behaviour by most programs.
+def save_image_list(in_list, outdir, out_name, out_ext):
+    count = 1
+    for working_slice in in_list:
+        assert isinstance(working_slice, Image.Image)
+        working_slice.save(os.path.join(outdir, out_name + "_" + str(count) + '.' + out_ext))
+        count += 1
 
 # main function when used as a standalone app.
 def main(argv):
@@ -429,7 +432,7 @@ def main(argv):
 
     # the original file name, used as a prefix  of the output slices file names.
     assert arguments['FILE_PATH']
-    file_name_original = os.path.basename(arguments['FILE_PATH'])
+
 
     # horizontal slice
     if arguments['HORIZONTAL_YN']:
@@ -484,22 +487,31 @@ def main(argv):
         print('output slices is empty, something went very wrong, please check the code.')
         return 1
 
+    # get current working directory as the output dir. later will pass the out_dir to the file saving functions.
+    out_dir = os.getcwd()
+    # get the pure file name of the input file, input may be a path, so we have to make sure path part not there.
+    file_name_original = os.path.basename(arguments['FILE_PATH'])
+    # split the original file name to a list, separated by '.'
+    file_name_splitted = file_name_original.split('.')
+    # get the last element of the list, which should be the ext name.
+    file_name_ext = str(file_name_splitted.pop())
+    # join other list element if any, in case the original file name contains '.'
+    file_name_without_ext = ''.join(file_name_splitted)
+
 
     # save the output slices to current working directory
-    # todo: implement file name calculation and file saving logic.
-    for element in output_slices:
-        if isinstance(element, Image.Image):
-            # save the image.
-            pass
-        elif isinstance(element, list):
-            for sub_slice in element:
-                assert isinstance(sub_slice, Image.Image)
-                # save the image
-                pass
-        else:
-            # this exception should never be raised.
-            raise Exception('elements in output image slice list is not a PIL image, nor a list of PIL image,'
-                            ' something seems went very wrong, check the code, fire an issue, find out why.')
+    # new implementation
+    if isinstance(output_slices[0], Image.Image):
+        save_image_list(output_slices, out_dir, file_name_without_ext, file_name_ext)
+    else:
+        assert isinstance(output_slices[0], list)
+        count = 1
+        for sub_slice_list in output_slices:
+            assert sub_slice_list
+            assert isinstance(sub_slice_list[0], Image.Image)
+            save_image_list(sub_slice_list, out_dir, file_name_without_ext+'_'+str(count), file_name_ext)
+            count += 1
+
 
     # everything's done, print success message, return 0.
     print('Slice completed, check current directory, slices should already be there.')
