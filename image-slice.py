@@ -1,3 +1,5 @@
+import sys
+import argparse
 from PIL import Image
 
 '''helper function, calculate the list of width/height of output slices'''
@@ -208,17 +210,17 @@ def slice_image_one_direction(image,
 
 def slice_horizontal_in_equal(image, horizontal_count):
     # slice horizontal
-    return slice_image_one_direction(image, False, True, 0, horizontal_count, True, False, 0, 0)
+    return slice_image_one_direction(image, False, True, 0, horizontal_count, True, False, 0, 0, False, '', '')
 
 def slice_vertical_in_equal(image, vertical_count):
     # slice vertical
-    return slice_image_one_direction(image, True, False, vertical_count, 0, True, False, 0, 0)
+    return slice_image_one_direction(image, True, False, vertical_count, 0, True, False, 0, 0, False, '', '')
 
 def slice_horizontal_by_step(image, step_horizontal):
-    return slice_image_one_direction(image, False, True, 0, 0, False, True, step_horizontal, 0)
+    return slice_image_one_direction(image, False, True, 0, 0, False, True, step_horizontal, 0, False, '', '')
 
 def slice_vertical_by_step(image, step_vertical):
-    return slice_image_one_direction(image, True, False, 0, 0, False, True, 0, step_vertical)
+    return slice_image_one_direction(image, True, False, 0, 0, False, True, 0, step_vertical, False, '', '')
 
 
 # Grid slice is a little different, to make it simple, we slice twice, first horizontal, second vertical.
@@ -274,7 +276,59 @@ def slice_vertical_by_ratio(image, ratio_string):
 def slice_by_grid_professional(image, options):
     pass
 
+# main function when used as a standalone app.
+def main(argv):
+    # Instantiate the parser
+    parser = argparse.ArgumentParser(description='image-slice is a tool to slice a image,'
+                                                 ' horizontally, vertically, or by a grid. You can slice equally to '
+                                                 'a given count, or by a specific size-step, or by a given ratio.')
+
+    # vertical or horizontal, a mutually exclusive group for this .
+    group_h_or_v = parser.add_mutually_exclusive_group(required = True)
+    # vertical slice
+    group_h_or_v.add_argument('-v', action='store_true', default=False)
+    # horizontal slice
+    group_h_or_v.add_argument('-h', action='store_true', default=False)
+
+    # equally, by a step, or by a ratio. a mutually exclusive group for it.
+    group_e_or_s_or_r = parser.add_mutually_exclusive_group(required = True)
+    # equally slice
+    group_e_or_s_or_r.add_argument('-e', type=int, metavar='SLICE_COUNT', dest='slice_count')
+    group_e_or_s_or_r.add_argument('-s', type=int, metavar='STEP_SIZE', dest='step_size')
+    group_e_or_s_or_r.add_argument('-r', metavar='RATIO_STRING', dest='ratio_string')
+
+    # file path
+    parser.add_argument('file_path', metavar='FILE_PATH', help='Image file path of the image to be sliced.')
+
+    # usage: image-slice filename [-v -h] [-e -s -r] [int]
+    # means: vertical or horizontal, equally or by step, how many slices or how long/wide is each slice.
 
 
 
-# todo: add a main
+if __name__ == "__main__":
+    main(sys.argv)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
