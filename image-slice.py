@@ -1,4 +1,5 @@
 import sys
+import os
 import argparse
 from PIL import Image
 
@@ -93,17 +94,17 @@ def calculate_slices_size(image_height_or_width, slice_count, step_size, ratio):
 
 
 def slice_image_one_direction(image,
-                slice_vertical_yn,
-                slice_horizontal_yn,
-                slice_count_vertical,
-                slice_count_horizontal,
-                equal_slice_yn,
-                step_slice_yn,
-                step_horizontal,
-                step_vertical,
-                ratio_slice_yn,
-                ratio_horizontal,
-                ratio_vertical):
+                slice_vertical_yn = False,
+                slice_horizontal_yn = False,
+                slice_count_vertical = 0,
+                slice_count_horizontal = 0,
+                equal_slice_yn = False,
+                step_slice_yn = False,
+                step_horizontal = 0,
+                step_vertical = 0,
+                ratio_slice_yn = False,
+                ratio_horizontal = '',
+                ratio_vertical = ''):
 
     ### Make sure the arguments are valid ###
 
@@ -160,9 +161,14 @@ def slice_image_one_direction(image,
         slices_heights = []
         # see if it's equal slice or step slice.
         if equal_slice_yn:
-            slices_heights = calculate_slices_size(img_height, slice_count=slice_count_vertical, step_size=0)
-        if step_slice_yn:
-            slices_heights = calculate_slices_size(img_height, slice_count=0, step_size=step_vertical)
+            slices_heights = calculate_slices_size(img_height, slice_count=slice_count_vertical, step_size=0, ratio='')
+        elif step_slice_yn:
+            slices_heights = calculate_slices_size(img_height, slice_count=0, step_size=step_vertical, ratio='')
+        elif ratio_slice_yn:
+            slices_heights = calculate_slices_size(img_height, slice_count=0, step_size=0, ratio=ratio_vertical)
+        else:
+            # This exception should never be raised.
+            raise Exception('slice mode error, not equal, not step, not ratio, things went very wrong, check it out.')
         # make sure it's not empty.
         assert slices_heights
         # the bounding box variables for crop
@@ -182,9 +188,14 @@ def slice_image_one_direction(image,
         slices_widths = []
         # see if it's equal slice or step slice
         if equal_slice_yn:
-            slices_widths = calculate_slices_size(img_width, slice_count=slice_count_horizontal, step_size=0)
-        if step_slice_yn:
-            slices_widths = calculate_slices_size(img_width, slice_count=0, step_size=step_horizontal)
+            slices_widths = calculate_slices_size(img_width, slice_count=slice_count_horizontal, step_size=0, ratio='')
+        elif step_slice_yn:
+            slices_widths = calculate_slices_size(img_width, slice_count=0, step_size=step_horizontal, ratio='')
+        elif ratio_slice_yn:
+            slices_widths = calculate_slices_size(img_width, slice_count=0, step_size=0, ratio=ratio_horizontal)
+        else:
+            # This exception should never be raised.
+            raise Exception('slice mode error, not equal, not step, not ratio, things went very wrong, check it out.')
         # make sure it's not empty
         assert slices_widths
         # the bounding box variables for crop
@@ -210,20 +221,32 @@ def slice_image_one_direction(image,
 
 def slice_horizontal_in_equal(image, horizontal_count):
     # slice horizontal
-    return slice_image_one_direction(image, False, True, 0, horizontal_count, True, False, 0, 0, False, '', '')
+    return slice_image_one_direction(image, slice_horizontal_yn=True, equal_slice_yn=True,
+                                     slice_count_horizontal=horizontal_count)
 
 def slice_vertical_in_equal(image, vertical_count):
     # slice vertical
-    return slice_image_one_direction(image, True, False, vertical_count, 0, True, False, 0, 0, False, '', '')
+    return slice_image_one_direction(image, slice_vertical_yn=True, equal_slice_yn=True,
+                                     slice_count_vertical=vertical_count)
 
 def slice_horizontal_by_step(image, step_horizontal):
-    return slice_image_one_direction(image, False, True, 0, 0, False, True, step_horizontal, 0, False, '', '')
+    return slice_image_one_direction(image, slice_horizontal_yn=True, step_slice_yn=True,
+                                     step_horizontal=step_horizontal)
 
 def slice_vertical_by_step(image, step_vertical):
-    return slice_image_one_direction(image, True, False, 0, 0, False, True, 0, step_vertical, False, '', '')
+    return slice_image_one_direction(image, slice_vertical_yn=True, step_slice_yn=True,
+                                     step_vertical=step_vertical)
 
+def slice_horizontal_by_ratio(image, ratio_string):
+    return slice_image_one_direction(image, slice_horizontal_yn=True, ratio_slice_yn=True,
+                                     ratio_horizontal=ratio_string)
+
+def slice_vertical_by_ratio(image, ratio_string):
+    return slice_image_one_direction(image, slice_vertical_yn=True, ratio_slice_yn=True,
+                                     ratio_vertical=ratio_string)
 
 # Grid slice is a little different, to make it simple, we slice twice, first horizontal, second vertical.
+# todo: refactor grid slice, specify vertical and horizontal slice mode directly, then slice both direction accordingly.
 
 def slice_to_grid_in_equal(image, vertical_count, horizontal_count):
     # first step, slice horizontally.
@@ -264,11 +287,7 @@ def slice_to_grid_by_step(image, vertical_step, horizontal_step):
 
 # Future
 
-def slice_horizontal_by_ratio(image, ratio_string):
-    pass
 
-def slice_vertical_by_ratio(image, ratio_string):
-    pass
 
 # In the pro mode, you can combine a equal horizontal slice with a step vertical slice.
 # Since it's not something usual, we call it the pro mode, so this complexity will not affect other simple situations.
@@ -276,32 +295,153 @@ def slice_vertical_by_ratio(image, ratio_string):
 def slice_by_grid_professional(image, options):
     pass
 
+# helper function to save a PIL image to disk. Save to cwd, it's a default behaviour by most programs.
+def save_image_slice(image_slice, file_name):
+    pass #todo: implement the saving.
+
+
 # main function when used as a standalone app.
 def main(argv):
     # Instantiate the parser
-    parser = argparse.ArgumentParser(description='image-slice is a tool to slice a image,'
-                                                 ' horizontally, vertically, or by a grid. You can slice equally to '
-                                                 'a given count, or by a specific size-step, or by a given ratio.')
-
+    parser = argparse.ArgumentParser(add_help=False,
+                                     description='\'image-slice\' is a tool for easy image slice:'
+                                                 ' horizontally, vertically, or by a grid.'
+                                                 '\nYou can slice a image equally to a given number of slices,'
+                                                 'or slice it by every N pixel, or to a given ratio like 3:2:1.',
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     epilog = 'Usage explained:'
+                                              '\n* direction: '
+                                              '\n    -v or -h is for vertical or horizontal slice, one and only one should be provided.'
+                                              '\n* slice mode: '
+                                              '\n    -e is for equally slice, following -e you should provide how many slices '
+                                              'you want, \n        For example: \'image-slice -v -e 3 someimage.jpg\', '
+                                              'means slice the image vertically into 3 slices.'
+                                              '\n    -s is for step slice, which means slice every N px,'
+                                              '\n        For example: '
+                                              '\'image-slice -h -s 200 imagefile.png\' means slice the image horizontally '
+                                              'every 200px, until it\'s all sliced.'
+                                              '\n    -r is for ratio slice, you can spcify a ratio, to which the image will be'
+                                              ' sliced.'
+                                              '\n        For example: \'slice-image -h -r 3:2:1 image.jpg\' will slice the image '
+                                              'to a ratio of \'3:2:1\',\n        so 3 slices will be generated, each has a size respectively '
+                                              'of the ratio 3:2:1. \n        (roughly, non-divisible pixels are distribute equally to each slice, '
+                                              '1px for each)'
+                                     )
+    # Define argument patterns.
     # vertical or horizontal, a mutually exclusive group for this .
-    group_h_or_v = parser.add_mutually_exclusive_group(required = True)
+    group_h_or_v = parser.add_mutually_exclusive_group(required=True)
     # vertical slice
-    group_h_or_v.add_argument('-v', action='store_true', default=False)
+    group_h_or_v.add_argument('-v', action='store_true', dest='VERTICAL_YN', default=False, help='Vertical slice.')
     # horizontal slice
-    group_h_or_v.add_argument('-h', action='store_true', default=False)
+    group_h_or_v.add_argument('-h', action='store_true', dest='HORIZONTAL_YN', default=False, help='Horizontal slice.')
 
     # equally, by a step, or by a ratio. a mutually exclusive group for it.
-    group_e_or_s_or_r = parser.add_mutually_exclusive_group(required = True)
+    group_e_or_s_or_r = parser.add_mutually_exclusive_group(required=True)
     # equally slice
-    group_e_or_s_or_r.add_argument('-e', type=int, metavar='SLICE_COUNT', dest='slice_count')
-    group_e_or_s_or_r.add_argument('-s', type=int, metavar='STEP_SIZE', dest='step_size')
-    group_e_or_s_or_r.add_argument('-r', metavar='RATIO_STRING', dest='ratio_string')
+    group_e_or_s_or_r.add_argument('-e', type=int, metavar='SLICE_COUNT', dest='slice_count', default=0, help='Slice equally to SLICE_COUNT parts.')
+    group_e_or_s_or_r.add_argument('-s', type=int, metavar='STEP_SIZE', dest='step_size', default=0, help='Slice every STEP_SIZE pixels.')
+    group_e_or_s_or_r.add_argument('-r', metavar='RATIO_STRING', dest='ratio_string', default='', help='Slice by a RATIO_STRING like 3:2:1')
 
     # file path
-    parser.add_argument('file_path', metavar='FILE_PATH', help='Image file path of the image to be sliced.')
+    parser.add_argument('file_path', metavar='FILE_PATH', help='File path of the image to be sliced.')
 
-    # usage: image-slice filename [-v -h] [-e -s -r] [int]
+    # override the default help (-h, --help), so we manually specify '--help' as a command for help.
+    parser.add_argument('--help', action='help', help='Print usage info')
+
+    # todo: implement grid case, use sub program command. Because grid slice is different than uni-direction slice.
+    # # grid slice should have a totally dirrerent arguments rule.
+
+    #parser.parse_args('--help')
+
+    # usage: image-slice [-v -h] [-e -s -r] [int] filename
     # means: vertical or horizontal, equally or by step, how many slices or how long/wide is each slice.
+
+    # Parse the incoming arguments
+    arguments = vars(parser.parse_args(argv))
+    # arguments should not be empty.
+    assert arguments
+
+    # List holding output slices, elements of which should be PIL Image objects.
+    output_slices = []
+
+    # the original file name, used as a prefix  of the output slices file names.
+    assert arguments['FILE_PATH']
+    file_name_original = os.path.basename(arguments['FILE_PATH'])
+
+    # horizontal slice
+    if arguments['HORIZONTAL_YN']:
+        print('horizontal')
+        # equal slice case.
+        if arguments['SLICE_COUNT']:
+            print('Equal slice,'+str(arguments['SLICE_COUNT']))
+            output_slices = slice_horizontal_in_equal(arguments['FILE_PATH'], arguments['SLICE_COUNT'])
+        # step slice
+        elif arguments['STEP_SIZE']:
+            print('STEP slice',+str(arguments['STEP_SIZE']))
+            output_slices = slice_horizontal_by_step(arguments['FILE_PATH'], arguments['STEP_SIZE'])
+        # ratio slice
+        elif arguments['RATIO_STRING']:
+            print('RATIO_STRING',+str(arguments['RATIO_STRING']))
+            output_slices = slice_horizontal_by_ratio(arguments['FILE_PATH'], arguments['RATIO_STRING'])
+        # should never reach this.
+        else:
+            # this exception should never be raised.
+            raise Exception('-e, -s or -r, one of which should be provided.')
+
+    # vertical slice
+    elif arguments['VERTICAL_YN']:
+        print('vertical')
+        # equal slice case
+        if arguments['SLICE_COUNT']:
+            print('Equal slice,' + str(arguments['SLICE_COUNT']))
+            output_slices = slice_vertical_in_equal(arguments['FILE_PATH'], arguments['SLICE_COUNT'])
+        # step slice
+        elif arguments['STEP_SIZE']:
+            print('STEP slice', +str(arguments['STEP_SIZE']))
+            output_slices = slice_vertical_by_step(arguments['FILE_PATH'], arguments['STEP_SIZE'])
+        # ratio slice
+        elif arguments['RATIO_STRING']:
+            print('RATIO'+str(arguments['RATIO_STRING']))
+            output_slices = slice_vertical_by_ratio(arguments['FILE_PATH'], arguments['RATIO_STRING'])
+        # should never reach
+        else:
+            # this exception should never be raised.
+            raise Exception('-e, -s or -r, one of which should be provided.')
+
+    # should never reach this branch.
+    else:
+        # this exception should never be raised.
+        raise Exception('-h or -v, Horizontal or vertical, one should be provided.')
+
+
+    # Check if the output list is empty, if it's empty, abort and exit.
+    try:
+        assert output_slices
+    except:
+        print('output slices is empty, something went very wrong, please check the code.')
+        return 1
+
+
+    # save the output slices to current working directory
+    # todo: implement file name calculation and file saving logic.
+    for element in output_slices:
+        if isinstance(element, Image.Image):
+            # save the image.
+            pass
+        elif isinstance(element, list):
+            for sub_slice in element:
+                assert isinstance(sub_slice, Image.Image)
+                # save the image
+                pass
+        else:
+            # this exception should never be raised.
+            raise Exception('elements in output image slice list is not a PIL image, nor a list of PIL image,'
+                            ' something seems went very wrong, check the code, fire an issue, find out why.')
+
+    # everything's done, print success message, return 0.
+    print('Slice completed, check current directory, slices should already be there.')
+    return 0
+
 
 
 
