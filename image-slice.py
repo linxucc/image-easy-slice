@@ -43,8 +43,15 @@ def calculate_slices_size(image_height_or_width, slice_count, step_size, ratio):
         assert not ratio
 
         while(image_height_or_width>0):
-            slices_size.append(step_size)
-            image_height_or_width -= step_size
+            if image_height_or_width>= step_size:
+                slices_size.append(step_size)
+                image_height_or_width -= step_size
+            else:
+                # if remaining image height or width is not greater than step_size, so it's the last slice.
+                # the size of last slice should be the remaining height or width.
+                slices_size.append(image_height_or_width)
+                # next iteration, the while statement should exit.
+                image_height_or_width -= step_size
 
     # ratio slice
     else:
