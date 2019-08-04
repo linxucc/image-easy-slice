@@ -426,18 +426,18 @@ def save_image_grid(in_list, out_dir, out_name, out_ext):
 
 # standalone horizontal
 def standalone_horizontal_slice(arguments):
-    print('horizontal')
+    print('[Horizontal slice]')
     # equal slice case.
     if getattr(arguments, 'slice_count', False):
-        print('Equal slice,' + str(arguments.slice_count))
+        print('Slice method: equal slice.  Slice count: ' + str(arguments.slice_count))
         return slice_horizontal_in_equal(arguments.file_name, arguments.slice_count)
     # step slice
     elif getattr(arguments, 'step_size', False):
-        print('STEP slice,' +str(arguments.step_size))
+        print('Slice method: step slice.  Slice step: every ' + str(arguments.step_size) + "px")
         return slice_horizontal_by_step(arguments.file_name, arguments.step_size)
     # ratio slice
     elif getattr(arguments, 'ratio_string', False):
-        print('RATIO_STRING,' +str(arguments.ratio_string))
+        print('Slice method: ratio slice.  Slice ratio: ' + str(arguments.ratio_string))
         return slice_horizontal_by_ratio(arguments.file_name, arguments.ratio_string)
     # should never reach this.
     else:
@@ -447,18 +447,18 @@ def standalone_horizontal_slice(arguments):
 
 # Standalone vertical
 def standalone_vertical_slice(arguments):
-    print('vertical')
+    print('[Vertical slice]')
     # equal slice case.
     if getattr(arguments, 'slice_count', False):
-        print('Equal slice,' + str(arguments.slice_count))
+        print('Slice method: equal slice.  Slice count: ' + str(arguments.slice_count))
         return slice_vertical_in_equal(arguments.file_name, arguments.slice_count)
     # step slice
     elif getattr(arguments, 'step_size', False):
-        print('STEP slice,' + str(arguments.step_size))
+        print('Slice method: step slice.  Slice step: every '  + str(arguments.step_size)+"px")
         return slice_vertical_by_step(arguments.file_name, arguments.step_size)
     # ratio slice
     elif getattr(arguments, 'ratio_string', False):
-        print('RATIO_STRING,' +str(arguments.ratio_string))
+        print('Slice method: ratio slice.  Slice ratio: ' +str(arguments.ratio_string))
         return slice_vertical_by_ratio(arguments.file_name, arguments.ratio_string)
     # should never reach this.
     else:
@@ -468,18 +468,21 @@ def standalone_vertical_slice(arguments):
 
 # standalone grid
 def standalone_grid_slice(arguments):
-    print('grid')
+    print('[Grid slice]')
     # parse the input arguments, get the mode and mode_params for each direction.
     # horizontal
     if getattr(arguments, 'grid_horizontal_slice_count', False):
         horizontal_mode = 'equal'
         horizontal_param = arguments.grid_horizontal_slice_count
+        print("Horizontal mode: equal slice.  Slice count: "+str(horizontal_param))
     elif getattr(arguments, 'grid_horizontal_step_size', False):
         horizontal_mode = 'step'
         horizontal_param = arguments.grid_horizontal_step_size
+        print("Horizontal mode: step slice.  Slice step: every " + str(horizontal_param)+"px")
     elif getattr(arguments, 'grid_horizontal_ratio_string', False):
         horizontal_mode = 'ratio'
         horizontal_param = arguments.grid_horizontal_ratio_string
+        print("Horizontal mode: ratio slice.  Slice ratio: " + str(horizontal_param))
     else:
         # should never reach this.
         raise Exception('Grid slice, horizontal mode unknown, something went very wrong, check the code, fire a issue.')
@@ -488,12 +491,15 @@ def standalone_grid_slice(arguments):
     if getattr(arguments, 'grid_vertical_slice_count', False):
         vertical_mode = 'equal'
         vertical_param = arguments.grid_vertical_slice_count
+        print("Vertical mode: equal slice.  Slice count: " + str(vertical_param))
     elif getattr(arguments, 'grid_vertical_step_size', False):
         vertical_mode = 'step'
         vertical_param = arguments.grid_vertical_step_size
+        print("Vertical mode: step slice.  Slice step: every " + str(vertical_param)+"px")
     elif getattr(arguments, 'grid_vertical_ratio_string', False):
         vertical_mode = 'ratio'
         vertical_param = arguments.grid_vertical_ratio_string
+        print("Vertical mode: ratio slice.  Slice ratio: " + str(vertical_param))
     else:
         # should never reach this.
         raise Exception('Grid slice, vertical mode unknown, something went very wrong, check the code, fire a issue.')
@@ -662,12 +668,12 @@ def main(argv):
         # parse call with no args will handle the 2 command situation properly, like python imageslice.py
         # otherwise the second command, in this case it's the script name, will be recognized to first real argument.
         arguments = parser.parse_args()
-    print(arguments)
+    # print(arguments)
     # arguments should not be empty.
     assert arguments
     # the name of image file to be sliced, should not be empty.
     assert arguments.file_name
-    print(arguments.file_name)
+    print("[Image File Name]: "+arguments.file_name)
 
 
     # dispatch the execution to the sub functions accordingly.
@@ -697,7 +703,7 @@ def main(argv):
         save_image_grid(output_slices, working_dir, file_name_without_ext, file_name_ext)
 
     # everything's done, print success message, return 0.
-    print('Slice completed, check current directory, slices should already be there.')
+    print('Slice completed, check current working directory, slices should already be there.')
     return 0
 
 
