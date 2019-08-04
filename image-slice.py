@@ -357,43 +357,43 @@ def slice_to_grid(image, vertical_mode, vertical_param, horizontal_mode, horizon
         assert isinstance(horizontal_param, str)
 
 
-    # begin horizontal slice
-    horizontal_slices = []
-    if horizontal_mode == 'equal':
-        horizontal_slices = slice_horizontal_in_equal(image, horizontal_param)
-    elif horizontal_mode == 'step':
-        horizontal_slices = slice_horizontal_by_step(image, horizontal_param)
-    elif horizontal_mode == 'ratio':
-        horizontal_slices = slice_horizontal_by_ratio(image, horizontal_param)
+    # begin vertical slice
+    vertical_slices = []
+    if vertical_mode == 'equal':
+        vertical_slices = slice_vertical_in_equal(image, vertical_param)
+    elif vertical_mode == 'step':
+        vertical_slices = slice_vertical_by_step(image, vertical_param)
+    elif vertical_mode == 'ratio':
+        vertical_slices = slice_vertical_by_ratio(image, vertical_param)
     else:
         # this should never be reached.
-        raise Exception('Horizontal slice mode in grid slice unknown, something went very wrong, check the code, fire a issue.')
+        raise Exception('vertical slice mode in grid slice unknown, something went very wrong, check the code, fire a issue.')
 
     # make sure the output list is not empty
-    assert horizontal_slices
+    assert vertical_slices
 
     # output grid slices, it's supposed to be a list of list
     grid_slices = []
 
     # begin vertical slices, for each image in horizontal slices, slice it vertically.
-    for horizontal_slice in horizontal_slices:
+    for vertical_slice in vertical_slices:
         # it should be a PIL image
-        assert isinstance(horizontal_slice, Image.Image)
+        assert isinstance(vertical_slice, Image.Image)
 
-        vertical_sub_slices = []
-        if vertical_mode == 'equal':
-            vertical_sub_slices = slice_vertical_in_equal(image, vertical_param)
-        elif vertical_mode == 'step':
-            vertical_sub_slices = slice_vertical_by_step(image, vertical_param)
-        elif vertical_mode == 'ratio':
-            vertical_sub_slices = slice_vertical_by_ratio(image, vertical_param)
+        horizontal_sub_slices = []
+        if horizontal_mode == 'equal':
+            horizontal_sub_slices = slice_horizontal_in_equal(vertical_slice, horizontal_param)
+        elif horizontal_mode == 'step':
+            horizontal_sub_slices = slice_horizontal_by_step(vertical_slice, horizontal_param)
+        elif horizontal_mode == 'ratio':
+            horizontal_sub_slices = slice_horizontal_by_ratio(vertical_slice, horizontal_param)
         else:
             # this should never be reached.
-            raise Exception('Vertical slice mode in grid slice unknown, something went very wrong, check the code, fire a issue.')
+            raise Exception('horizontal slice mode in grid slice unknown, something went very wrong, check the code, fire a issue.')
         # make sure it's not empty
-        assert vertical_sub_slices
+        assert horizontal_sub_slices
         # append it to the output list
-        grid_slices.append(vertical_sub_slices)
+        grid_slices.append(horizontal_sub_slices)
 
     # make sure it's not empty
     assert grid_slices
