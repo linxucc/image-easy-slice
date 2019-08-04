@@ -8,16 +8,22 @@ from PIL import Image
 
 
 def calculate_slices_size(image_height_or_width, slice_count, step_size, ratio):
-    # arguments parsing, validation.
+    # arguments parsing
+    # all numeric arguments should be numeric,
+    assert isinstance(image_height_or_width, int)
+    assert isinstance(slice_count, int)
+    assert isinstance(step_size, int)
+    # and they are all greater than 0.
     assert image_height_or_width > 0
     assert slice_count >= 0
     assert step_size >= 0
-    # one of the step_size or slice_count should be zero, or it's a invalid invoke.
-    assert step_size * slice_count == 0
-    # make sure they are not both zero, or it's a invalid invoke.
-    assert step_size != slice_count
-    # make sure ratio is a instance of str, even if it's empty.
+
+    # Ratio string should be a str
     assert isinstance(ratio, str)
+
+    # slice_count, step_size and ratio, one of the 3 should be True, all the others should be False (0 or '')
+    # this is done in each case below.
+
 
     slices_size = []
     # equal slice
@@ -116,22 +122,94 @@ def slice_image_one_direction(image,
     ### Make sure the arguments are valid ###
 
     # Since this function is not for public use directly, so we assert, and through exceptions.
+
     # Each time, either slice vertical, or slice horizontal, not both.
     assert slice_vertical_yn != slice_horizontal_yn
-    # Either equal slice or step slice, not both, not neither.
-    assert equal_slice_yn != step_slice_yn
+
+    # It's either slice equal, by step, or by ratio. not both.
+    # If one of equal_slice or step_slice is true, the other should be false, and ratio_yn should be false.
+    if equal_slice_yn or step_slice_yn:
+        assert equal_slice_yn != step_slice_yn
+        assert not ratio_slice_yn
+    # Both equal_slice_yn and step_slice_yn is false, so the ratio_slice_yn should be True.
+    else:
+        # in this case ratio_slice should be true, or it's something really wrong.
+        assert ratio_slice_yn
+
     # make sure all the counts and steps are none negative.
     assert slice_count_vertical >= 0
     assert slice_count_horizontal >= 0
     assert step_horizontal >= 0
     assert step_vertical >= 0
-    # make sure one of the counts is zero
+
+    # make sure only one of the two directions has a non-zero value.
     if equal_slice_yn:
-        # equal slice, make sure only one direction has count, the other should be 0
+        # equal slice, make sure only one direction has a value, the other should be 0
         assert slice_count_horizontal*slice_count_vertical == 0
+        # make sure they are not both 0
+        assert slice_count_horizontal != slice_count_vertical
     if step_slice_yn:
-        # step slice, make sure only one direction hsa step, the other should be 0
+        # step slice, make sure only one direction hsa a value, the other should be 0
         assert step_vertical*step_horizontal == 0
+        # make sure they are not both zero
+        assert step_vertical != step_horizontal
+
+    # Ratio slice, make sure 1 and only 1 of horizontal or vertical ratio has proper value.
+    if ratio_slice_yn:
+        # one of the ratio string should be True, (not empty)
+        assert ratio_horizontal or ratio_vertical
+        # they cannot both be True.
+        assert not (ratio_vertical and ratio_horizontal)
+        # if it's horizontal, check if the ratio string is a proper ratio string.
+        if ratio_horizontal:
+            temp_ratio_list = ratio_horizontal.split(':')
+            print(temp_ratio_list)
+            # We do not assert, but try and raise a exception,
+            # because exception can provide more error message than a assertion, here is input check, not a assert.
+            # the list elements should not be empty, so we can exclude the cases like: '1:3:' which will be '1','3',''
+            if not all(temp_ratio_list):
+                raise Exception("Ratio string '"+ratio_horizontal+"' is not a valid ratio, check if it's a typo."
+                                +"The ratio numbers should be seprated by only one ':' in between, not multiple. "
+                                +"Also check if there are any leading or following ':' in your ratio string. "
+                                +"It should be something like '3:2:1', not something strange.")
+            # nor the ratio elements be a non-integer.
+            temp_ratio_error_non_int = [s for s in temp_ratio_list if not s.isdigit()]
+            if temp_ratio_error_non_int:
+                raise Exception("Ratio string '"+ratio_horizontal+"' is not a valid ratio, '"
+                                +str(temp_ratio_error_non_int)+
+                                "' is not a number, a ratio should consist of pure numbers.")
+            # nor the ratio elements be a ZERO
+            temp_ratio_error_zero = [int(s) for s in temp_ratio_list if int(s)==0]
+            if temp_ratio_error_zero:
+                raise Exception("Ratio string '"+ratio_horizontal+"' has at least one '0' as a ratio number, "
+                                "a valid ratio should not contain any 0, because it's meaningless. "
+                                                                  "Check if it's a typo.")
+        # if it's vertical, check the vertical ratio string, make sure it's a valid ratio.
+        elif ratio_vertical:
+            temp_ratio_list = ratio_vertical.split(':')
+            # We do not assert, but try and raise a exception,
+            # because exception can provide more error message than a assertion, here is input check, not a assert.
+            # the list elements should not be empty, so we can exclude the cases like: '1:3:' which will be '1','3',''
+            if not all(temp_ratio_list):
+                raise Exception("Ratio string '" + ratio_vertical + "' is not a valid ratio, check if it's a typo."
+                                + "The ratio numbers should be seprated by only one ':' in between, not multiple. "
+                                + "Also check if there are any leading or following ':' in your ratio string. "
+                                + "It should be something like '3:2:1', not something strange.")
+            # nor the ratio elements be a non-integer.
+            temp_ratio_error_non_int = [s for s in temp_ratio_list if not s.isdigit()]
+            if temp_ratio_error_non_int:
+                raise Exception("Ratio string '" + ratio_vertical + "' is not a valid ratio, '"
+                                + str(temp_ratio_error_non_int) +
+                                "' is not a number, a ratio should consist of pure numbers.")
+            # nor the ratio elements be a ZERO
+            temp_ratio_error_zero = [int(s) for s in temp_ratio_list if int(s) == 0]
+            if temp_ratio_error_zero:
+                raise Exception("Ratio string '" + ratio_vertical + "' has at least one '0' as a ratio number, "
+                                                                      "a valid ratio should not contain any 0, because it's meaningless. "
+                                                                      "Check if it's a typo.")
+        else:
+            # This should never be reached.
+            raise Exception("Something impossible happened, check the code, fire a issue.")
 
 
     ### prepare the image object. ###
@@ -355,11 +433,11 @@ def standalone_horizontal_slice(arguments):
         return slice_horizontal_in_equal(arguments.file_name, arguments.slice_count)
     # step slice
     elif getattr(arguments, 'step_size', False):
-        print('STEP slice', +str(arguments.step_size))
+        print('STEP slice,' +str(arguments.step_size))
         return slice_horizontal_by_step(arguments.file_name, arguments.step_size)
     # ratio slice
     elif getattr(arguments, 'ratio_string', False):
-        print('RATIO_STRING', +str(arguments.ratio_string))
+        print('RATIO_STRING,' +str(arguments.ratio_string))
         return slice_horizontal_by_ratio(arguments.file_name, arguments.ratio_string)
     # should never reach this.
     else:
