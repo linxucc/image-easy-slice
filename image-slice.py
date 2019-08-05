@@ -34,7 +34,7 @@ def _calculate_slices_size(image_height_or_width, slice_count, step_size, ratio)
         # begin the calculation.
         base_size = int(image_height_or_width // slice_count)
         remainder = image_height_or_width - base_size * slice_count
-        for slice in range(slice_count):
+        for img_slice in range(slice_count):
             if remainder > 0:
                 size = base_size + 1
                 remainder -= 1
@@ -74,13 +74,13 @@ def _calculate_slices_size(image_height_or_width, slice_count, step_size, ratio)
         # calculation begins
         # how many parts in this ratio expression
         parts_count = len(ratio_list)
-        sum = 0
+        ratio_sum = 0
         # sum all the ratio numbers
         for ratio_number in ratio_list:
-            sum += ratio_number
+            ratio_sum += ratio_number
         # calculate the base size
-        base_size = int(image_height_or_width // sum)
-        remainder = image_height_or_width - base_size * sum
+        base_size = int(image_height_or_width // ratio_sum)
+        remainder = image_height_or_width - base_size * ratio_sum
 
         # distribute the remainder to all the parts.
         remainder_each = int(remainder // parts_count)
@@ -266,8 +266,8 @@ def _slice_image_one_direction(
         for slice_height in slices_heights:
             bottom += slice_height
             bbox = (left, upper, right, bottom)
-            slice = img.crop(bbox)
-            output_slices.append(slice)
+            image_slice = img.crop(bbox)
+            output_slices.append(image_slice)
             upper += slice_height
 
     # horizontal case
@@ -296,8 +296,8 @@ def _slice_image_one_direction(
         for slice_width in slices_widths:
             right += slice_width
             bbox = (left, upper, right, bottom)
-            slice = img.crop(bbox)
-            output_slices.append(slice)
+            image_slice = img.crop(bbox)
+            output_slices.append(image_slice)
             left += slice_width
 
     # return the result list.
@@ -500,11 +500,13 @@ def _standalone_grid_slice(arguments):
         elif '*' in grid_string:
             temp_grid_values = [int(i) for i in grid_string.split('*') if i.isdigit() and int(i) != 0]
         else:
-            raise Exception('Grid String invalid. A valid grid string should be either "3x2" or "3*2", use "x" or "*" for separator.')
+            raise Exception('Grid String invalid. '
+                            'A valid grid string should be either "3x2" or "3*2", use "x" or "*" for separator.')
         # a valid grid string should be either 3x2 or 3*2, use x or * for separator.
         # this case, it's a 3x2 style input.
 
-        # there should not be any empty element, this check eliminates the case of multiple 'x' or leading or trailing 'x'
+        # there should not be any empty element,
+        # this check eliminates the case of multiple 'x' or leading or trailing 'x'
         if all(temp_grid_values):
             pass
         else:
@@ -527,7 +529,7 @@ def _standalone_grid_slice(arguments):
         vertical_param = grid_values[1]
 
     else:
-    # horizontal
+        # horizontal
         if getattr(arguments, 'grid_horizontal_slice_count', False):
             horizontal_mode = 'equal'
             horizontal_param = arguments.grid_horizontal_slice_count
@@ -542,7 +544,8 @@ def _standalone_grid_slice(arguments):
             print("Horizontal mode: ratio slice.  Slice ratio: " + str(horizontal_param))
         else:
             # should never reach this.
-            raise Exception('Grid slice, horizontal mode unknown, something went very wrong, check the code, fire a issue.')
+            raise Exception('Grid slice, horizontal mode unknown, '
+                            'something went very wrong, check the code, fire a issue.')
 
         # vertical
         if getattr(arguments, 'grid_vertical_slice_count', False):
@@ -559,7 +562,8 @@ def _standalone_grid_slice(arguments):
             print("Vertical mode: ratio slice.  Slice ratio: " + str(vertical_param))
         else:
             # should never reach this.
-            raise Exception('Grid slice, vertical mode unknown, something went very wrong, check the code, fire a issue.')
+            raise Exception('Grid slice, vertical mode unknown, '
+                            'something went very wrong, check the code, fire a issue.')
 
     # do the grid slice.
     return slice_to_grid(arguments.file_name, horizontal_mode=horizontal_mode, horizontal_param=horizontal_param,
