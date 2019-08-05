@@ -470,39 +470,81 @@ def standalone_vertical_slice(arguments):
 def standalone_grid_slice(arguments):
     print('[Grid slice]')
     # parse the input arguments, get the mode and mode_params for each direction.
-    # horizontal
-    if getattr(arguments, 'grid_horizontal_slice_count', False):
-        horizontal_mode = 'equal'
-        horizontal_param = arguments.grid_horizontal_slice_count
-        print("Horizontal mode: equal slice.  Slice count: "+str(horizontal_param))
-    elif getattr(arguments, 'grid_horizontal_step_size', False):
-        horizontal_mode = 'step'
-        horizontal_param = arguments.grid_horizontal_step_size
-        print("Horizontal mode: step slice.  Slice step: every " + str(horizontal_param)+"px")
-    elif getattr(arguments, 'grid_horizontal_ratio_string', False):
-        horizontal_mode = 'ratio'
-        horizontal_param = arguments.grid_horizontal_ratio_string
-        print("Horizontal mode: ratio slice.  Slice ratio: " + str(horizontal_param))
-    else:
-        # should never reach this.
-        raise Exception('Grid slice, horizontal mode unknown, something went very wrong, check the code, fire a issue.')
+    if getattr(arguments, 'grid_string', False):
+        # It's the shortcut grid_string case, a grid is provide in a form or 3x2 or 3*2
+        grid_string = arguments.grid_string
 
-    # vertical
-    if getattr(arguments, 'grid_vertical_slice_count', False):
+        # A list for holding grid values
+        grid_values = []
+
+        # Check if it's separated by 'x'
+        if 'x' in grid_string:
+            # temp list for value check
+            temp_grid_values = [int(i) for i in grid_string.split('x') if i.isdigit() and int(i) != 0]
+        # or '*' as separator
+        elif '*' in grid_string:
+            temp_grid_values = [int(i) for i in grid_string.split('*') if i.isdigit() and int(i) != 0]
+        else:
+            raise Exception('Grid String invalid. A valid grid string should be either "3x2" or "3*2", use "x" or "*" for separator.')
+        # a valid grid string should be either 3x2 or 3*2, use x or * for separator.
+        # this case, it's a 3x2 style input.
+
+        # there should not be any empty element, this check eliminates the case of multiple 'x' or leading or trailing 'x'
+        if all(temp_grid_values):
+            pass
+        else:
+            raise Exception('Grid String invalid. A valid grid string should be 2 nunmber seperated by '
+                            'either "x" or "*" as separator, like "3x2" or "3*2", check if it\'s a typo.')
+
+        # The length of the list should be 2, all the elements should be a int, the value should not be 0
+        if len(temp_grid_values) == 2:
+            pass
+        else:
+            raise Exception('Grid String invalid. A valid grid string should be 2 nunmber seperated by '
+                            'either "x" or "*" as separator, like "3x2" or "3*2", check if it\'s a typo.')
+
+        # now we have a valid grid.
+        grid_values = temp_grid_values
+        # set the arguments for grid slice.
+        horizontal_mode = 'equal'
+        horizontal_param = grid_values[0]
         vertical_mode = 'equal'
-        vertical_param = arguments.grid_vertical_slice_count
-        print("Vertical mode: equal slice.  Slice count: " + str(vertical_param))
-    elif getattr(arguments, 'grid_vertical_step_size', False):
-        vertical_mode = 'step'
-        vertical_param = arguments.grid_vertical_step_size
-        print("Vertical mode: step slice.  Slice step: every " + str(vertical_param)+"px")
-    elif getattr(arguments, 'grid_vertical_ratio_string', False):
-        vertical_mode = 'ratio'
-        vertical_param = arguments.grid_vertical_ratio_string
-        print("Vertical mode: ratio slice.  Slice ratio: " + str(vertical_param))
+        vertical_param = grid_values[1]
+
     else:
-        # should never reach this.
-        raise Exception('Grid slice, vertical mode unknown, something went very wrong, check the code, fire a issue.')
+    # horizontal
+        if getattr(arguments, 'grid_horizontal_slice_count', False):
+            horizontal_mode = 'equal'
+            horizontal_param = arguments.grid_horizontal_slice_count
+            print("Horizontal mode: equal slice.  Slice count: "+str(horizontal_param))
+        elif getattr(arguments, 'grid_horizontal_step_size', False):
+            horizontal_mode = 'step'
+            horizontal_param = arguments.grid_horizontal_step_size
+            print("Horizontal mode: step slice.  Slice step: every " + str(horizontal_param)+"px")
+        elif getattr(arguments, 'grid_horizontal_ratio_string', False):
+            horizontal_mode = 'ratio'
+            horizontal_param = arguments.grid_horizontal_ratio_string
+            print("Horizontal mode: ratio slice.  Slice ratio: " + str(horizontal_param))
+        else:
+            # should never reach this.
+            raise Exception('Grid slice, horizontal mode unknown, something went very wrong, check the code, fire a issue.')
+
+        # vertical
+        if getattr(arguments, 'grid_vertical_slice_count', False):
+            vertical_mode = 'equal'
+            vertical_param = arguments.grid_vertical_slice_count
+            print("Vertical mode: equal slice.  Slice count: " + str(vertical_param))
+        elif getattr(arguments, 'grid_vertical_step_size', False):
+            vertical_mode = 'step'
+            vertical_param = arguments.grid_vertical_step_size
+            print("Vertical mode: step slice.  Slice step: every " + str(vertical_param)+"px")
+        elif getattr(arguments, 'grid_vertical_ratio_string', False):
+            vertical_mode = 'ratio'
+            vertical_param = arguments.grid_vertical_ratio_string
+            print("Vertical mode: ratio slice.  Slice ratio: " + str(vertical_param))
+        else:
+            # should never reach this.
+            raise Exception('Grid slice, vertical mode unknown, something went very wrong, check the code, fire a issue.')
 
     # do the grid slice.
     return slice_to_grid(arguments.file_name, horizontal_mode=horizontal_mode, horizontal_param=horizontal_param,
@@ -627,6 +669,11 @@ def main(argv):
     # Define a grid sub command parser.
     grid_parser = subparsers.add_parser('grid', aliases = ['g'],
                                         help='Grid slice mode, for help use \'image-slice grid --help\'')
+    # # The shortcut for grid equal slice.
+    # group_grid_shortcut_or_not = grid_parser.add_mutually_exclusive_group(required = True)
+    # # add a short cut command.
+    # group_grid_shortcut_or_not.add_argument('grid_string', default='',required=False)
+    # # append others
 
     # Vertical command, define a mutually exclusive argument group.
     group_grid_vertical_e_or_s_or_r = grid_parser.add_mutually_exclusive_group(required=True)
