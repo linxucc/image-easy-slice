@@ -137,6 +137,35 @@ def _slice_image_one_direction(
         # in this case ratio_slice should be true, or it's something really wrong.
         assert ratio_slice_yn
 
+    # make sure all the numeric parameters are of type of int, or a valueError should be raised to the API users.
+    if not isinstance(slice_count_vertical, int):
+        raise ValueError('slice_count_vertical should be a int, check the function arguments.')
+    elif not slice_count_vertical >= 0:
+        raise ValueError('slice_count_vertical should be greater than 0, check the function arguments.')
+    else:
+        pass
+    
+    if not isinstance(slice_count_horizontal, int):
+        raise ValueError('slice_count_horizontal should be a int, check the function arguments.')
+    elif not slice_count_horizontal >= 0:
+        raise ValueError('slice_count_horizontal should be greater than 0, check the function arguments.')
+    else:
+        pass
+    
+    if not isinstance(step_horizontal, int):
+        raise ValueError('step_horizontal should be a int, check the function arguments.')
+    elif not step_horizontal >= 0:
+        raise ValueError('step_horizontal should be greater than 0, check the function arguments.')
+    else:
+        pass
+    
+    if not isinstance(step_vertical, int):
+        raise ValueError('step_vertical should be a int, check the function arguments.')
+    elif not step_vertical >= 0:
+        raise ValueError('step_vertical should be greater than 0, check the function arguments.')
+    else:
+        pass
+
     # make sure all the counts and steps are none negative.
     assert slice_count_vertical >= 0
     assert slice_count_horizontal >= 0
@@ -169,23 +198,23 @@ def _slice_image_one_direction(
             # because exception can provide more error message than a assertion, here is input check, not a assert.
             # the list elements should not be empty, so we can exclude the cases like: '1:3:' which will be '1','3',''
             if not all(temp_ratio_list):
-                raise Exception("Ratio string '" + ratio_horizontal + "' is not a valid ratio, check if it's a typo."
-                                + "The ratio numbers should be separated by only one ':' in between, not multiple. "
-                                + "Also check if there are any leading or following ':' in your ratio string. "
-                                + "It should be something like '3:2:1', not something strange.")
+                raise ValueError("Ratio string '" + ratio_horizontal + "' is not a valid ratio, check if it's a typo."
+                                 + "The ratio numbers should be separated by only one ':' in between, not multiple. "
+                                 + "Also check if there are any leading or following ':' in your ratio string. "
+                                 + "It should be something like '3:2:1', not something strange.")
             # nor the ratio elements be a non-integer.
             temp_ratio_error_non_int = [s for s in temp_ratio_list if not s.isdigit()]
             if temp_ratio_error_non_int:
-                raise Exception("Ratio string '" + ratio_horizontal + "' is not a valid ratio, '"
-                                + str(temp_ratio_error_non_int) +
-                                "' is not a number, a ratio should consist of pure numbers.")
+                raise ValueError("Ratio string '" + ratio_horizontal + "' is not a valid ratio, '"
+                                 + str(temp_ratio_error_non_int) +
+                                 "' is not a number, a ratio should consist of pure numbers.")
             # nor the ratio elements be a ZERO
             temp_ratio_error_zero = [int(s) for s in temp_ratio_list if int(s) == 0]
             if temp_ratio_error_zero:
-                raise Exception("Ratio string '" + ratio_horizontal +
-                                "' has at least one '0' as a ratio number, "
-                                "a valid ratio should not contain any 0, because it's meaningless. "
-                                "Check if it's a typo.")
+                raise ValueError("Ratio string '" + ratio_horizontal +
+                                 "' has at least one '0' as a ratio number, "
+                                 "a valid ratio should not contain any 0, because it's meaningless. "
+                                 "Check if it's a typo.")
         # if it's vertical, check the vertical ratio string, make sure it's a valid ratio.
         elif ratio_vertical:
             temp_ratio_list = ratio_vertical.split(':')
@@ -193,26 +222,27 @@ def _slice_image_one_direction(
             # because exception can provide more error message than a assertion, here is input check, not a assert.
             # the list elements should not be empty, so we can exclude the cases like: '1:3:' which will be '1','3',''
             if not all(temp_ratio_list):
-                raise Exception("Ratio string '" + ratio_vertical + "' is not a valid ratio, check if it's a typo."
-                                + "The ratio numbers should be separated by only one ':' in between, not multiple. "
-                                + "Also check if there are any leading or following ':' in your ratio string. "
-                                + "It should be something like '3:2:1', not something strange.")
+                raise ValueError("Ratio string '" + ratio_vertical + "' is not a valid ratio, check if it's a typo."
+                                 + "The ratio numbers should be separated by only one ':' in between, not multiple. "
+                                 + "Also check if there are any leading or following ':' in your ratio string. "
+                                 + "It should be something like '3:2:1', not something strange.")
             # nor the ratio elements be a non-integer.
             temp_ratio_error_non_int = [s for s in temp_ratio_list if not s.isdigit()]
             if temp_ratio_error_non_int:
-                raise Exception("Ratio string '" + ratio_vertical + "' is not a valid ratio, '"
-                                + str(temp_ratio_error_non_int) +
-                                "' is not a number, a ratio should consist of pure numbers.")
+                raise ValueError("Ratio string '" + ratio_vertical + "' is not a valid ratio, '"
+                                 + str(temp_ratio_error_non_int) +
+                                 "' is not a number, a ratio should consist of pure numbers.")
             # nor the ratio elements be a ZERO
             temp_ratio_error_zero = [int(s) for s in temp_ratio_list if int(s) == 0]
             if temp_ratio_error_zero:
-                raise Exception("Ratio string '" + ratio_vertical +
-                                "' has at least one '0' as a ratio number, "
-                                "a valid ratio should not contain any 0, because it's meaningless. "
-                                "Check if it's a typo.")
+                raise ValueError("Ratio string '" + ratio_vertical +
+                                 "' has at least one '0' as a ratio number, "
+                                 "a valid ratio should not contain any 0, because it's meaningless. "
+                                 "Check if it's a typo.")
         else:
             # This should never be reached.
-            raise Exception("Something impossible happened, check the code, fire a issue.")
+            raise ValueError("Neither ratio_vertical nor ratio_horizontal is provided, "
+                             "previous assertion fails, it's impossible, check the code.")
 
     # prepare the image object. #
 
@@ -222,13 +252,13 @@ def _slice_image_one_direction(
         try:
             img = Image.open(image)
         except IOError:
-            raise Exception('PIL open file error, please check if the image path provided is a valid image file.')
+            raise IOError('PIL open file error, please check if the image path provided is a valid image file.')
     else:
         if isinstance(image, Image.Image):
             # incoming object is a PIL image, do nothing.
             img = image
         else:
-            raise Exception(
+            raise TypeError(
                 "Incoming argument 'image' is not a string or a PIL Image, please check the function arguments.")
 
     # assert internal variable img is a instance of PIL Image.
@@ -254,7 +284,7 @@ def _slice_image_one_direction(
             slices_heights = _calculate_slices_size(img_height, slice_count=0, step_size=0, ratio=ratio_vertical)
         else:
             # This exception should never be raised.
-            raise Exception('slice mode error, not equal, not step, not ratio, things went very wrong, check it out.')
+            raise ValueError('slice mode error, not equal, not step, not ratio, things went very wrong, check it out.')
         # make sure it's not empty.
         assert slices_heights
         # the bounding box variables for crop
@@ -283,7 +313,7 @@ def _slice_image_one_direction(
             slices_widths = _calculate_slices_size(img_width, slice_count=0, step_size=0, ratio=ratio_horizontal)
         else:
             # This exception should never be raised.
-            raise Exception('slice mode error, not equal, not step, not ratio, things went very wrong, check it out.')
+            raise ValueError('slice mode error, not equal, not step, not ratio, things went very wrong, check it out.')
         # make sure it's not empty
         assert slices_widths
         # the bounding box variables for crop
@@ -309,15 +339,61 @@ def _slice_image_one_direction(
     # if not specified explicitly, the sequence of the slices is from left to right, from top to bottom.
 
 
-# Proxy functions to make it easier to use, add more error proof.
+# Public API: Proxy functions to make it easier to use, add more error proof.
 
 def slice_horizontal_in_equal(image, horizontal_count):
+    """Slice a image horizontally into equal parts.
+
+    Slice a given image provided in the 'image' parameter, into 'horizontal_count' equal parts, horizontally.
+    Param 'image' is either a path string or a PIL image, if it's is a path string, it will be opened by PIL.
+    If it's a PIL Image object, it will be sliced directly.
+
+    Args:
+        image:
+            a string to the image path, or a PIL Image object.
+        horizontal_count:
+            a int, how many slices you want to produce.
+
+    Returns:
+        A List of PIL image objects: containing all the output slices.
+        [Image_object(slice 1), Image_object(slice 1), ... , Image_object(slice N)]
+
+    Raises:
+        TypeError:
+            If 'image' is not a string nor a PIL Image object, or 'horizontal_count' is not a int.
+        IOError:
+            If PIL cannot open the image from the path in the 'image'.
+
+    """
     # slice horizontal
     return _slice_image_one_direction(image, slice_horizontal_yn=True, equal_slice_yn=True,
                                       slice_count_horizontal=horizontal_count)
 
 
 def slice_vertical_in_equal(image, vertical_count):
+    """Slice a image horizontally into equal parts.
+
+    Slice a given image provided in the 'image' parameter, into 'vertical_count' equal parts, vertically.
+    Param 'image' is either a path string or a PIL image, if it's is a path string, it will be opened by PIL.
+    If it's a PIL Image object, it will be sliced directly.
+
+    Args:
+        image:
+            a string to the image path, or a PIL Image object.
+        vertical_count:
+            a int, how many slices you want to produce.
+
+    Returns:
+        A List of PIL image objects: containing all the output slices.
+        [Image_object(slice 1), Image_object(slice 1), ... , Image_object(slice N)]
+
+    Raises:
+        TypeError:
+            If 'image' is not a string nor a PIL Image object, or 'vertical_count' is not a int.
+        IOError:
+            If PIL cannot open the image from the path in the 'image'.
+
+    """
     # slice vertical
     return _slice_image_one_direction(image, slice_vertical_yn=True, equal_slice_yn=True,
                                       slice_count_vertical=vertical_count)
@@ -377,7 +453,7 @@ def slice_to_grid(image, vertical_mode, vertical_param, horizontal_mode, horizon
         vertical_slices = slice_vertical_by_ratio(image, vertical_param)
     else:
         # this should never be reached.
-        raise Exception(
+        raise ValueError(
             'vertical slice mode in grid slice unknown, something went very wrong, check the code, fire a issue.')
 
     # make sure the output list is not empty
@@ -399,7 +475,7 @@ def slice_to_grid(image, vertical_mode, vertical_param, horizontal_mode, horizon
             horizontal_sub_slices = slice_horizontal_by_ratio(vertical_slice, horizontal_param)
         else:
             # this should never be reached.
-            raise Exception(
+            raise ValueError(
                 'horizontal slice mode in grid slice unknown, something went very wrong, check the code, fire a issue.')
         # make sure it's not empty
         assert horizontal_sub_slices
@@ -412,7 +488,7 @@ def slice_to_grid(image, vertical_mode, vertical_param, horizontal_mode, horizon
     return grid_slices
 
 
-# Image slice file I/O functions
+# Public API: Image slice file I/O helper functions
 
 # helper function to save a list of PIL image to disk. Save to cwd, it's a default behaviour by most programs.
 def save_image_list(in_list, out_dir, out_name, out_ext):
@@ -453,7 +529,7 @@ def _standalone_horizontal_slice(arguments):
     # should never reach this.
     else:
         # this exception should never be raised.
-        raise Exception('-e, -s or -r, one of which should be provided.')
+        raise ValueError('-e, -s or -r, one of which should be provided.')
 
 
 # Standalone vertical
@@ -474,7 +550,7 @@ def _standalone_vertical_slice(arguments):
     # should never reach this.
     else:
         # this exception should never be raised.
-        raise Exception('-e, -s or -r, one of which should be provided.')
+        raise ValueError('-e, -s or -r, one of which should be provided.')
 
 
 # standalone grid
@@ -495,8 +571,8 @@ def _standalone_grid_slice(arguments):
         elif '*' in grid_string:
             temp_grid_values = [int(i) for i in grid_string.split('*') if i.isdigit() and int(i) != 0]
         else:
-            raise Exception('Grid String invalid. '
-                            'A valid grid string should be either "3x2" or "3*2", use "x" or "*" for separator.')
+            raise ValueError('Grid String invalid. '
+                             'A valid grid string should be either "3x2" or "3*2", use "x" or "*" for separator.')
         # a valid grid string should be either 3x2 or 3*2, use x or * for separator.
         # this case, it's a 3x2 style input.
 
@@ -505,15 +581,15 @@ def _standalone_grid_slice(arguments):
         if all(temp_grid_values):
             pass
         else:
-            raise Exception('Grid String invalid. A valid grid string should be 2 numbers separated by '
-                            'either "x" or "*" as separator, like "3x2" or "3*2", check if it\'s a typo.')
+            raise ValueError('Grid String invalid. A valid grid string should be 2 numbers separated by '
+                             'either "x" or "*" as separator, like "3x2" or "3*2", check if it\'s a typo.')
 
         # The length of the list should be 2, all the elements should be a int, the value should not be 0
         if len(temp_grid_values) == 2:
             pass
         else:
-            raise Exception('Grid String invalid. A valid grid string should be 2 numbers separated by '
-                            'either "x" or "*" as separator, like "3x2" or "3*2", check if it\'s a typo.')
+            raise ValueError('Grid String invalid. A valid grid string should be 2 numbers separated by '
+                             'either "x" or "*" as separator, like "3x2" or "3*2", check if it\'s a typo.')
 
         # now we have a valid grid.
         grid_values = temp_grid_values
@@ -539,8 +615,8 @@ def _standalone_grid_slice(arguments):
             print("Horizontal mode: ratio slice.  Slice ratio: " + str(horizontal_param))
         else:
             # should never reach this.
-            raise Exception('Grid slice, horizontal mode unknown, '
-                            'something went very wrong, check the code, fire a issue.')
+            raise ValueError('Grid slice, horizontal mode unknown, '
+                             'something went very wrong, check the code, fire a issue.')
 
         # vertical
         if getattr(arguments, 'grid_vertical_slice_count', False):
@@ -557,8 +633,8 @@ def _standalone_grid_slice(arguments):
             print("Vertical mode: ratio slice.  Slice ratio: " + str(vertical_param))
         else:
             # should never reach this.
-            raise Exception('Grid slice, vertical mode unknown, '
-                            'something went very wrong, check the code, fire a issue.')
+            raise ValueError('Grid slice, vertical mode unknown, '
+                             'something went very wrong, check the code, fire a issue.')
 
     # do the grid slice.
     return slice_to_grid(arguments.file_name, horizontal_mode=horizontal_mode, horizontal_param=horizontal_param,
