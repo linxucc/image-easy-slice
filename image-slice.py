@@ -245,7 +245,6 @@ def _slice_image_one_direction(
     if slice_vertical_yn:
         # now it's vertical slice
         # calculate the sizes of each slice.
-        slices_heights = []
         # see if it's equal slice or step slice.
         if equal_slice_yn:
             slices_heights = _calculate_slices_size(img_height, slice_count=slice_count_vertical, step_size=0, ratio='')
@@ -275,7 +274,6 @@ def _slice_image_one_direction(
         # now it's horizontal slice
         # make sure it's horizontal slice.
         assert slice_horizontal_yn
-        slices_widths = []
         # see if it's equal slice or step slice
         if equal_slice_yn:
             slices_widths = _calculate_slices_size(img_width, slice_count=slice_count_horizontal, step_size=0, ratio='')
@@ -371,7 +369,6 @@ def slice_to_grid(image, vertical_mode, vertical_param, horizontal_mode, horizon
         assert isinstance(horizontal_param, str)
 
     # begin vertical slice
-    vertical_slices = []
     if vertical_mode == 'equal':
         vertical_slices = slice_vertical_in_equal(image, vertical_param)
     elif vertical_mode == 'step':
@@ -394,7 +391,6 @@ def slice_to_grid(image, vertical_mode, vertical_param, horizontal_mode, horizon
         # it should be a PIL image
         assert isinstance(vertical_slice, Image.Image)
 
-        horizontal_sub_slices = []
         if horizontal_mode == 'equal':
             horizontal_sub_slices = slice_horizontal_in_equal(vertical_slice, horizontal_param)
         elif horizontal_mode == 'step':
@@ -490,7 +486,6 @@ def _standalone_grid_slice(arguments):
         grid_string = arguments.grid_string
 
         # A list for holding grid values
-        grid_values = []
 
         # Check if it's separated by 'x'
         if 'x' in grid_string:
@@ -510,14 +505,14 @@ def _standalone_grid_slice(arguments):
         if all(temp_grid_values):
             pass
         else:
-            raise Exception('Grid String invalid. A valid grid string should be 2 nunmber seperated by '
+            raise Exception('Grid String invalid. A valid grid string should be 2 numbers separated by '
                             'either "x" or "*" as separator, like "3x2" or "3*2", check if it\'s a typo.')
 
         # The length of the list should be 2, all the elements should be a int, the value should not be 0
         if len(temp_grid_values) == 2:
             pass
         else:
-            raise Exception('Grid String invalid. A valid grid string should be 2 nunmber seperated by '
+            raise Exception('Grid String invalid. A valid grid string should be 2 numbers separated by '
                             'either "x" or "*" as separator, like "3x2" or "3*2", check if it\'s a typo.')
 
         # now we have a valid grid.
