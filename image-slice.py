@@ -18,6 +18,9 @@ def _calculate_slices_size(image_height_or_width, slice_count, step_size, ratio)
         So the caller can directly iterate through the list regardless of how the size is calculated.
         Future if someone is going to provide a better calculation algorithm, just modify here.
 
+    Raises:
+        AssertionError: if one of the impossible happens.
+
     """
 
     # arguments parsing
@@ -130,22 +133,35 @@ def _slice_image_one_direction(
     The grid slice is implemented in a way of 'slice horizontally first, then for each slice, slice vertically.'
 
     Args:
-        image:
-        slice_vertical_yn:
-        slice_horizontal_yn:
-        slice_count_vertical:
-        slice_count_horizontal:
-        equal_slice_yn:
-        step_slice_yn:
-        step_horizontal:
-        step_vertical:
-        ratio_slice_yn:
-        ratio_horizontal:
-        ratio_vertical:
+        image: a path string or a PIL image object.
+        slice_vertical_yn: True if vertical slice.
+        slice_horizontal_yn: True if horizontal slice.
+        slice_count_vertical: In equal slice mode, how many slices do you want, vertically.
+        slice_count_horizontal: In equal slice mode, how many slices do you want, horizontally.
+        equal_slice_yn: True if it's equal slice.
+        step_slice_yn: True if it's step slice.
+        step_horizontal: In step slice mode, how many pixels do you want for each slice, horizontally.
+        step_vertical: In step slice mode, how many pixels do you want for each slice, vertically.
+        ratio_slice_yn: True if it's ratio slice.
+        ratio_horizontal: A ratio string, multiple numbers separated by ':' , like this: 3:2:1.
+            tells the program to what ratio the slices should be, horizontally.
+        ratio_vertical: A ratio string, multiple numbers separated by ':' , like this: 3:2:1.
+            tells the program to what ratio the slices should be, vertically.
 
     Returns:
         A list of PIL Image objects.
         Each Image object is a output slice.
+
+    Raises:
+        TypeError:
+            If 'image' is not a string nor a PIL Image object, or other numeric parameters is not a int.
+        IOError:
+            If 'image' is a string, but PIL cannot open it. PIL will raise it, check the path and the file.
+        ValueError:
+            If numeric parameters used in current mode is not greater than 0.
+            Or it's the equal slice, but expected slices count is smaller than image width (in pixel).
+            Or it's the ratio slice, but incoming ratio string is not a valid ratio string.
+
 
     """
     # Make sure the arguments are valid #
@@ -236,12 +252,12 @@ def _slice_image_one_direction(
                 raise ValueError("Ratio string '" + ratio_horizontal + "' is not a valid ratio, '"
                                  + str(temp_ratio_error_non_int) +
                                  "' is not a number, a ratio should consist of pure numbers.")
-            # nor the ratio elements be a ZERO
-            temp_ratio_error_zero = [int(s) for s in temp_ratio_list if int(s) == 0]
+            # nor the ratio elements be a ZERO or negative.
+            temp_ratio_error_zero = [int(s) for s in temp_ratio_list if int(s) <= 0]
             if temp_ratio_error_zero:
                 raise ValueError("Ratio string '" + ratio_horizontal +
                                  "' has at least one '0' as a ratio number, "
-                                 "a valid ratio should not contain any 0, because it's meaningless. "
+                                 "a valid ratio should not contain any 0 or negative because it's meaningless. "
                                  "Check if it's a typo.")
         # if it's vertical, check the vertical ratio string, make sure it's a valid ratio.
         elif ratio_vertical:
@@ -260,12 +276,12 @@ def _slice_image_one_direction(
                 raise ValueError("Ratio string '" + ratio_vertical + "' is not a valid ratio, '"
                                  + str(temp_ratio_error_non_int) +
                                  "' is not a number, a ratio should consist of pure numbers.")
-            # nor the ratio elements be a ZERO
-            temp_ratio_error_zero = [int(s) for s in temp_ratio_list if int(s) == 0]
+            # nor the ratio elements be a ZERO or negative.
+            temp_ratio_error_zero = [int(s) for s in temp_ratio_list if int(s) <= 0]
             if temp_ratio_error_zero:
                 raise ValueError("Ratio string '" + ratio_vertical +
                                  "' has at least one '0' as a ratio number, "
-                                 "a valid ratio should not contain any 0, because it's meaningless. "
+                                 "a valid ratio should not contain any 0 or negative, because it's meaningless. "
                                  "Check if it's a typo.")
         else:
             # This should never be reached.
@@ -305,6 +321,10 @@ def _slice_image_one_direction(
         # calculate the sizes of each slice.
         # see if it's equal slice or step slice.
         if equal_slice_yn:
+            # the expected number of slices should not be greater than the image width/height (in pixels)
+            if slice_count_vertical > img_height:
+                raise ValueError('In equal slice, the expected number of vertical slices is greater than image height'
+                                 '(in pixels), it\'s impossible to slice like this, check your input.')
             slices_heights = _calculate_slices_size(img_height, slice_count=slice_count_vertical, step_size=0, ratio='')
         elif step_slice_yn:
             slices_heights = _calculate_slices_size(img_height, slice_count=0, step_size=step_vertical, ratio='')
@@ -334,6 +354,10 @@ def _slice_image_one_direction(
         assert slice_horizontal_yn
         # see if it's equal slice or step slice
         if equal_slice_yn:
+            # the expected number of slices should not be greater than the image width/height (in pixels)
+            if slice_count_horizontal > img_width:
+                raise ValueError('In equal slice, the expected number of horizontal slices is greater than image width'
+                                 '(in pixels), it\'s impossible to slice like this, check your input.')
             slices_widths = _calculate_slices_size(img_width, slice_count=slice_count_horizontal, step_size=0, ratio='')
         elif step_slice_yn:
             slices_widths = _calculate_slices_size(img_width, slice_count=0, step_size=step_horizontal, ratio='')
@@ -438,11 +462,15 @@ def slice_horizontal_by_step(image, step_horizontal):
     Param 'image' is either a path string or a PIL image, if it's is a path string, it will be opened by PIL.
     If it's a PIL Image object, it will be sliced directly.
 
+    For example:
+        If the 'image' is a 500*400px image, 'step_horizontal' is 150, 4 slices will be produced,
+        the size of each slice will be: 150*400, 150*400, 150*400, 50*400.
+
     Args:
         image:
             a string to the image path, or a PIL Image object.
         step_horizontal:
-            a int, the specific number of pixels you want each slice be.
+            a int, the exact number of pixels you want in each slices.
 
     Returns:
         A List of PIL image objects:
@@ -454,11 +482,51 @@ def slice_horizontal_by_step(image, step_horizontal):
 
 
 def slice_vertical_by_step(image, step_vertical):
+    """Slice a image vertically every N pixels.
+
+    Slice a given image provided by the 'image' parameter, every 'step_horizontal' px.
+
+    Param 'image' is either a path string or a PIL image, if it's is a path string, it will be opened by PIL.
+    If it's a PIL Image object, it will be sliced directly.
+
+    For example:
+        If the 'image' is a 500*400px image, 'step_vertical' is 150, 3 slices will be produced,
+        the size of each slice will be: 500*150, 500*150, 500*100.
+
+    Args:
+        image:
+            a string to the image path, or a PIL Image object.
+        step_vertical:
+            a int, the specific number of pixels you want each slice be.
+
+    Returns:
+        A List of PIL image objects:
+            [Image_object(slice 1), Image_object(slice 1), ... , Image_object(slice N)]
+
+    """
     return _slice_image_one_direction(image, slice_vertical_yn=True, step_slice_yn=True,
                                       step_vertical=step_vertical)
 
 
 def slice_horizontal_by_ratio(image, ratio_string):
+    """Slice a image horizontally by a given ratio.
+
+    Slice a given image provided by the 'image' parameter, to a given ratio in the 'ratio_string', horizontally.
+
+    Param 'image' is either a path string or a PIL image, if it's is a path string, it will be opened by PIL.
+    If it's a PIL Image object, it will be sliced directly.
+
+    For example:
+        If the 'image' is a 500*400px image, 'ratio_string' is '3:2', 2 slices will be produced,
+        the size of each slice will be: 300*400, 200*400.
+
+    Args:
+        image:
+        ratio_string:
+
+    Returns:
+
+    """
     return _slice_image_one_direction(image, slice_horizontal_yn=True, ratio_slice_yn=True,
                                       ratio_horizontal=ratio_string)
 
