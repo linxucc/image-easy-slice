@@ -2,13 +2,24 @@ import os
 import argparse
 from PIL import Image
 
-'''helper function, calculate the list of width/height of output slices'''
-
 
 # return a list, in which contains the calculated width/height of each slice.
-
-
 def _calculate_slices_size(image_height_or_width, slice_count, step_size, ratio):
+    """helper function, calculate the list of width/height of output slices
+
+    Args:
+        image_height_or_width: positive int
+        slice_count: positive int
+        step_size: positive int
+        ratio: a string separated by ':', like '2:1:3'
+
+    Returns:
+        A list of int, represents the width or height of each output slices.
+        So the caller can directly iterate through the list regardless of how the size is calculated.
+        Future if someone is going to provide a better calculation algorithm, just modify here.
+
+    """
+
     # arguments parsing
     # all numeric arguments should be numeric,
     assert isinstance(image_height_or_width, int)
@@ -99,14 +110,6 @@ def _calculate_slices_size(image_height_or_width, slice_count, step_size, ratio)
     return slices_size
 
 
-'''the main function to do the slice'''
-
-
-# this function should not be called directly, use proxy functions instead, unless you have a strong reason to do so,
-# this function only do one-direction image slice, for grid slice you should use the grid proxy functions.
-# grid slice is implemented in a way of 'slice horizontal first, then for each slice, do the same vertical slice.'
-
-
 def _slice_image_one_direction(
         image,
         slice_vertical_yn=False,
@@ -120,6 +123,31 @@ def _slice_image_one_direction(
         ratio_slice_yn=False,
         ratio_horizontal='',
         ratio_vertical=''):
+    """The main function to do the slice
+
+    This function should not be called directly, use proxy API functions instead, unless you have a reason to.
+    This function only does one-direction image slice, for grid slice, check the grid proxy API functions.
+    The grid slice is implemented in a way of 'slice horizontally first, then for each slice, slice vertically.'
+
+    Args:
+        image:
+        slice_vertical_yn:
+        slice_horizontal_yn:
+        slice_count_vertical:
+        slice_count_horizontal:
+        equal_slice_yn:
+        step_slice_yn:
+        step_horizontal:
+        step_vertical:
+        ratio_slice_yn:
+        ratio_horizontal:
+        ratio_vertical:
+
+    Returns:
+        A list of PIL Image objects.
+        Each Image object is a output slice.
+
+    """
     # Make sure the arguments are valid #
 
     # Since this function is not for public use directly, so we assert, and through exceptions.
@@ -355,14 +383,16 @@ def slice_horizontal_in_equal(image, horizontal_count):
             a int, how many slices you want to produce.
 
     Returns:
-        A List of PIL image objects: containing all the output slices.
-        [Image_object(slice 1), Image_object(slice 1), ... , Image_object(slice N)]
+        A List of PIL image objects:
+            [Image_object(slice 1), Image_object(slice 1), ... , Image_object(slice N)]
 
     Raises:
         TypeError:
             If 'image' is not a string nor a PIL Image object, or 'horizontal_count' is not a int.
         IOError:
             If PIL cannot open the image from the path in the 'image'.
+        ValueError:
+            If 'horizontal_count' is not greater than 0.
 
     """
     # slice horizontal
@@ -384,14 +414,16 @@ def slice_vertical_in_equal(image, vertical_count):
             a int, how many slices you want to produce.
 
     Returns:
-        A List of PIL image objects: containing all the output slices.
-        [Image_object(slice 1), Image_object(slice 1), ... , Image_object(slice N)]
+        A List of PIL image objects:
+            [Image_object(slice 1), Image_object(slice 1), ... , Image_object(slice N)]
 
     Raises:
         TypeError:
             If 'image' is not a string nor a PIL Image object, or 'vertical_count' is not a int.
         IOError:
             If PIL cannot open the image from the path in the 'image'.
+        ValueError:
+            If 'horizontal_count' is not greater than 0.
 
     """
     # slice vertical
@@ -400,6 +432,23 @@ def slice_vertical_in_equal(image, vertical_count):
 
 
 def slice_horizontal_by_step(image, step_horizontal):
+    """Slice a image horizontally every N pixels.
+
+    Slice a given image provided by the 'image' parameter, every 'step_horizontal' px.
+    Param 'image' is either a path string or a PIL image, if it's is a path string, it will be opened by PIL.
+    If it's a PIL Image object, it will be sliced directly.
+
+    Args:
+        image:
+            a string to the image path, or a PIL Image object.
+        step_horizontal:
+            a int, the specific number of pixels you want each slice be.
+
+    Returns:
+        A List of PIL image objects:
+            [Image_object(slice 1), Image_object(slice 1), ... , Image_object(slice N)]
+
+    """
     return _slice_image_one_direction(image, slice_horizontal_yn=True, step_slice_yn=True,
                                       step_horizontal=step_horizontal)
 
