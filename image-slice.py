@@ -5,7 +5,7 @@ from PIL import Image
 
 # return a list, in which contains the calculated width/height of each slice.
 def _calculate_slices_size(image_height_or_width, slice_count, step_size, ratio):
-    """helper function, calculate the list of width/height of output slices
+    """helper function, calculates the width/height of each output slices, return a list of them.
 
     Args:
         image_height_or_width: positive int
@@ -394,11 +394,18 @@ def _slice_image_one_direction(
 # Public API: Proxy functions to make it easier to use, add more error proof.
 
 def slice_horizontal_in_equal(image, horizontal_count):
-    """Slice a image horizontally into equal parts.
+    """Slices a image horizontally into equal parts.
 
     Slice a given image provided in the 'image' parameter, into 'horizontal_count' equal parts, horizontally.
+
     Param 'image' is either a path string or a PIL image, if it's is a path string, it will be opened by PIL.
     If it's a PIL Image object, it will be sliced directly.
+
+    For example:
+        If the 'image' is a 500*400px image, 'horizontal_count' is 3, three slices will be generated.
+        The size of each is approximately 'equal', because in most cases the image height is not divisible by
+        the expected 'horizontal_count', the remainders will be distributed to the leading slices 1px for each.
+        So the slices will be 167*400, 167*400, 166*400. Because 500 = 166*3 + 2 .
 
     Args:
         image:
@@ -417,6 +424,7 @@ def slice_horizontal_in_equal(image, horizontal_count):
             If PIL cannot open the image from the path in the 'image'.
         ValueError:
             If 'horizontal_count' is not greater than 0.
+            Or if 'horizontal_count' is greater than the width (in pixel) of 'image'
 
     """
     # slice horizontal
@@ -425,11 +433,18 @@ def slice_horizontal_in_equal(image, horizontal_count):
 
 
 def slice_vertical_in_equal(image, vertical_count):
-    """Slice a image horizontally into equal parts.
+    """Slices a image horizontally into equal parts.
 
     Slice a given image provided in the 'image' parameter, into 'vertical_count' equal parts, vertically.
+
     Param 'image' is either a path string or a PIL image, if it's is a path string, it will be opened by PIL.
     If it's a PIL Image object, it will be sliced directly.
+
+    For example:
+        If the 'image' is a 500*400px image, 'vertical_count' is 3, three slices will be generated.
+        The size of each is approximately 'equal', because in most cases the image height is not divisible by
+        the expected 'vertical_count', the remainders will be distributed to the leading slices 1px for each.
+        So the slices will be 500*134, 500*133, 500*133. Because 400 = 133*3 + 1 .
 
     Args:
         image:
@@ -448,6 +463,7 @@ def slice_vertical_in_equal(image, vertical_count):
             If PIL cannot open the image from the path in the 'image'.
         ValueError:
             If 'horizontal_count' is not greater than 0.
+            Or if 'vertical_count' is greater than the height (in pixel) of 'image'
 
     """
     # slice vertical
@@ -456,9 +472,10 @@ def slice_vertical_in_equal(image, vertical_count):
 
 
 def slice_horizontal_by_step(image, step_horizontal):
-    """Slice a image horizontally every N pixels.
+    """Slices a image horizontally every N pixels.
 
     Slice a given image provided by the 'image' parameter, every 'step_horizontal' px.
+
     Param 'image' is either a path string or a PIL image, if it's is a path string, it will be opened by PIL.
     If it's a PIL Image object, it will be sliced directly.
 
@@ -476,13 +493,21 @@ def slice_horizontal_by_step(image, step_horizontal):
         A List of PIL image objects:
             [Image_object(slice 1), Image_object(slice 1), ... , Image_object(slice N)]
 
+    Raises:
+        TypeError:
+            If 'image' is not a string nor a PIL Image object, or 'vertical_count' is not a int.
+        IOError:
+            If PIL cannot open the image from the path in the 'image'.
+        ValueError:
+            If 'step_horizontal' is not a positive integer.
+
     """
     return _slice_image_one_direction(image, slice_horizontal_yn=True, step_slice_yn=True,
                                       step_horizontal=step_horizontal)
 
 
 def slice_vertical_by_step(image, step_vertical):
-    """Slice a image vertically every N pixels.
+    """Slices a image vertically every N pixels.
 
     Slice a given image provided by the 'image' parameter, every 'step_horizontal' px.
 
@@ -503,15 +528,24 @@ def slice_vertical_by_step(image, step_vertical):
         A List of PIL image objects:
             [Image_object(slice 1), Image_object(slice 1), ... , Image_object(slice N)]
 
+    Raises:
+        TypeError:
+            If 'image' is not a string nor a PIL Image object, or 'vertical_count' is not a int.
+        IOError:
+            If PIL cannot open the image from the path in the 'image'.
+        ValueError:
+            If 'step_vertical' is not a positive integer.
+
     """
     return _slice_image_one_direction(image, slice_vertical_yn=True, step_slice_yn=True,
                                       step_vertical=step_vertical)
 
 
 def slice_horizontal_by_ratio(image, ratio_string):
-    """Slice a image horizontally by a given ratio.
+    """Slices a image horizontally by a given ratio.
 
-    Slice a given image provided by the 'image' parameter, to a given ratio in the 'ratio_string', horizontally.
+    Slice a given image provided by the 'image' parameter,
+    to a given ratio provided in the 'ratio_string', horizontally.
 
     Param 'image' is either a path string or a PIL image, if it's is a path string, it will be opened by PIL.
     If it's a PIL Image object, it will be sliced directly.
@@ -520,11 +554,34 @@ def slice_horizontal_by_ratio(image, ratio_string):
         If the 'image' is a 500*400px image, 'ratio_string' is '3:2', 2 slices will be produced,
         the size of each slice will be: 300*400, 200*400.
 
+        When the image width is not divisible by the sum of ratio numbers, the remainder will be distributed evenly
+        to all slices, from left to right, 1px for each, if there still any, repeat it, until it's all clear.
+
+        So if 'image' is a 500*400px image, 'ratio_string' is '2:1', 2 slices will be produced,
+        the size of each slice will be: 333*400, 167*400.
+        Because 500 = 166*(2+1) + 2 , the first 1 of the remainder 2 is added to the first slice,
+        there still has 1 left in the remainder, so it's added to the second slice.
+        The final width of each slice is, 166*2+1 = 333, 166*1+1 = 167
+
     Args:
         image:
+            a string to the image path, or a PIL Image object.
         ratio_string:
+            a string, in a form of several positive integers separated by ':', like this 3:2:1
 
     Returns:
+        A List of PIL image objects:
+            [Image_object(slice 1), Image_object(slice 1), ... , Image_object(slice N)]
+
+    Raises:
+        TypeError:
+            If 'image' is not a string nor a PIL Image object, or 'vertical_count' is not a int.
+            If 'ratio_string' is not a string.
+        IOError:
+            If PIL cannot open the image from the path in the 'image'.
+        ValueError:
+            If 'ratio_string' is not in the valid form. It should something be like this: 3:2:1
+            No trailing or leading ':'s, no 0s, no negatives, no decimals.
 
     """
     return _slice_image_one_direction(image, slice_horizontal_yn=True, ratio_slice_yn=True,
@@ -532,12 +589,145 @@ def slice_horizontal_by_ratio(image, ratio_string):
 
 
 def slice_vertical_by_ratio(image, ratio_string):
+    """Slices a image vertically by a given ratio.
+
+    Slice a given image provided by the 'image' parameter, to a given ratio provided in the 'ratio_string', vertically.
+
+    Param 'image' is either a path string or a PIL image, if it's is a path string, it will be opened by PIL.
+    If it's a PIL Image object, it will be sliced directly.
+
+    For example:
+        If the 'image' is a 500*400px image, 'ratio_string' is '3:2', 2 slices will be produced,
+        the size of each slice will be: 500*240, 500*160.
+
+        When the image height is not divisible by the sum of ratio numbers, the remainder will be distributed evenly
+        to all slices, from up to bottom, 1px for each, if there still any, repeat it, until it's all clear.
+
+        So if 'image' is a 500*400px image, 'ratio_string' is '2:1', 2 slices will be produced,
+        the size of each slice will be: 500*267, 500*133.
+        Because 400 = 133*(2+1) + 1 , the remainder 1 is added to the first slice, the height of which is 133*2 + 1
+
+
+    Args:
+        image:
+            a string to the image path, or a PIL Image object.
+        ratio_string:
+            a string, in a form of several positive integers separated by ':', like this 3:2:1
+
+    Returns:
+        A List of PIL image objects:
+            [Image_object(slice 1), Image_object(slice 1), ... , Image_object(slice N)]
+
+    Raises:
+        TypeError:
+            If 'image' is not a string nor a PIL Image object, or 'vertical_count' is not a int.
+            If 'ratio_string' is not a string.
+        IOError:
+            If PIL cannot open the image from the path in the 'image'.
+        ValueError:
+            If 'ratio_string' is not in the valid form. It should something be like this: 3:2:1
+            No trailing or leading ':'s, no 0s, no negatives, no decimals.
+
+    """
     return _slice_image_one_direction(image, slice_vertical_yn=True, ratio_slice_yn=True,
                                       ratio_vertical=ratio_string)
 
 
 # Grid slice is a little different, to make it simple, we slice twice, first horizontal, second vertical.
-def slice_to_grid(image, vertical_mode, vertical_param, horizontal_mode, horizontal_param):
+def slice_to_grid(image, horizontal_mode, horizontal_param, vertical_mode, vertical_param):
+    """Slices a given image to a grid
+
+    Slice a given image to a given grid. 'Grid' here means slice it both vertically and horizontally.
+
+    A simple grid is something like '3*2', by saying it, what we actually mean is,
+    'horizontally slice it to 3 equal parts, then vertically slice it to 2 equal parts.'
+
+    Since we have 3 different slice mode in each direction, here we 'extend' the meaning of 'grid' a little bit,
+    you can separately specify in each direction how you would like the image to be sliced, you can use any combination.
+
+    For example:
+        1. Simple grid, slice the image to '3*2' grid.
+               Call like this:  slice_to_grid(your_image, 'equal', 3, 'equal', 2)
+
+        2. Slice the image horizontally to 3 equal parts, vertically by every 100px.
+               Call like this:  slice_to_grid(your_image, 'equal', 3, 'step', 100)
+
+        3. Slice the image horizontally to a ratio of '2:1', vertically by every 50px.
+               Call like this:  slice_to_grid(your_image, 'ratio', '2:1', 'step', 50)
+
+        4. Slice the image to 100px*100px tiles.
+               Call like this:  slice_to_grid(your_image, 'step', 100, 'step', 100)
+
+    Grid slice is performed in a way of slicing in each direction consecutively,
+    so the 3 slice modes ('equal', 'step', 'ratio') have exactly the same meaning with horizontal/vertical slice.
+
+    For a detailed explanation on each mode, check the docs of horizontal/vertical slice functions.
+
+
+    Args:
+        image:
+            a string to the image path, or a PIL Image object.
+            If it's is a path string, it will be opened by PIL. If it's a PIL Image object, it will be used directly.
+        horizontal_mode:
+            a string, the value of which should be either 'equal' or 'step' or 'ratio'.
+            it means how you would like the image to be sliced horizontally.
+        horizontal_param:
+            If 'horizontal_mode' is 'equal', it should be a int, which means 'horizontal_count',
+                it's the number of slices you would like to have.
+            If 'horizontal_mode' is 'step', it should be a int, which means 'horizontal_step',
+                it's the number of pixels you would like each of the slices to have.
+            If 'horizontal_mode' is 'ratio', it should be a string, which means 'horizontal_ratio',
+                it's the ratio you want the image to be sliced to in horizontal.
+        vertical_mode:
+            a string, the value of which should be either 'equal' or 'step' or 'ratio'.
+            it means how you would like the image to be sliced vertically.
+        vertical_param:
+            If 'vertical_mode' is 'equal', it should be a int, which means 'vertical_count',
+                it's the number of slices you would like to have.
+            If 'vertical_mode' is 'step', it should be a int, which means 'vertical_step',
+                it's the number of pixels you would like each of the slices to have.
+            If 'vertical_mode' is 'ratio', it should be a string, which means 'vertical_ratio',
+                it's the ratio you want the image to be sliced to in vertical.
+
+
+    Returns:
+        A List of List of PIL Image objects.
+        Each list element stands for a single row of the output image grid.
+        If the output slices have N slices in horizontal, M slices in vertical, it would be like this:
+
+            [[Image_row_1_col_1, Image_row_1_col_2, ... , Image_row_1_col_N],
+             [Image_row_2_col_1, Image_row_2_col_2, ... , Image_row_2_col_N],
+             ...,
+             [Image_row_M_col_1, Image_row_M_col_2, ... , Image_row_M_col_N]]
+
+    Raises:
+        TypeError:
+            If 'image' is not a string nor a PIL Image object.
+            If 'vertical_mode' or 'horizontal_mode' is not a string,
+            If 'horizontal_param' or 'vertical_param' is not the required type to it's mode.
+                When it's 'equal', 'step', it should be int, if it's 'ratio', it should be str.
+        IOError:
+            If PIL cannot open the image from the path in the 'image'.
+        ValueError:
+            If 'vertical_mode' or 'horizontal_mode' is not one of 'equal' or 'step' or 'ratio'.
+            If 'horizontal_param' or 'vertical_param' is not the proper value according to it's mode.
+
+    """
+    # parameter validation
+    if not vertical_mode:
+        raise ValueError('\'vertical_mode\' should not be empty in grid slice, that\'s how you slice vertically')
+    if not isinstance(vertical_mode, str):
+        raise TypeError('\'vertical_mode\' should be a string.')
+    if vertical_mode not in ['equal', 'step', 'ratio']:
+        raise ValueError('\'vertical_mode\' should either be one of the 3 values: equal, step, ratio .')
+    
+    if not horizontal_mode:
+        raise ValueError('\'horizontal_mode\' should not be empty in grid slice, that\'s how you slice horizontally')
+    if not isinstance(horizontal_mode, str):
+        raise TypeError('\'horizontal_mode\' should be a string.')
+    if horizontal_mode not in ['equal', 'step', 'ratio']:
+        raise ValueError('\'horizontal_mode\' should either be one of the 3 values: equal, step, ratio .')
+    
     # vertical_mode should not be empty.
     assert vertical_mode
     # vertical_mode should be one of the 3 values.
@@ -550,7 +740,11 @@ def slice_to_grid(image, vertical_mode, vertical_param, horizontal_mode, horizon
     # check the param, they should be valid
     if vertical_mode in ['equal', 'step']:
         # equal mode, step mode, the param should be a int.
-        assert isinstance(vertical_param, int)
+        if not isinstance(vertical_param, int):
+            raise TypeError('When \'vertical_mode\' is \'equal\' or \'step\', the \'vertical_param\' should be a int.')
+        if not vertical_param > 0:
+            raise ValueError('When \'vertical_mode\' is \'equal\' or \'step\','
+                             ' the \'vertical_param\' should be greater than 0.')
     else:
         # ratio mode, the param should be a string. other cases is already excluded by previous assert statement
         assert isinstance(vertical_param, str)
@@ -609,6 +803,36 @@ def slice_to_grid(image, vertical_mode, vertical_param, horizontal_mode, horizon
 
 # helper function to save a list of PIL image to disk. Save to cwd, it's a default behaviour by most programs.
 def save_image_list(in_list, out_dir, out_name, out_ext):
+    """saves a list of PIL image to a directory
+
+    A helper function to save a image list more easily.
+
+    Args:
+        in_list:
+            A list of PIL Image objects.
+        out_dir:
+            A valid path string, to where the files would be written to.
+        out_name:
+            A String, the file name prefix you would like to save.
+            The output file names will be: out_name_1, out_name_2, ...
+        out_ext:
+            The file extension name, like jpg, png, ...
+
+    Returns:
+        All the images in 'in_list' will be saved to 'out_dir', one by one.
+        The file names will be 'out_name_1.out_ext', 'out_name_2.out_ext', ...
+        for example: my_slice_1.jpg, my_slice_2.jpg, ...
+
+    Raises:
+        KeyError:
+            If the output format could not be determined from the file name. (from PIL)
+            The 'out_ext' may be a invalid value, which cannot be recognized by PIL. Check PIL's document for detail.
+        IOError:
+            If the file could not be written. The file may have been created, and may contain partial data. (from PIL)
+
+        All the exceptions above is raised from PIL's image.save() method. Check PIL's document for details.
+
+    """
     count = 1
     for working_slice in in_list:
         assert isinstance(working_slice, Image.Image)
@@ -618,6 +842,47 @@ def save_image_list(in_list, out_dir, out_name, out_ext):
 
 # helper function for image grid slice saving.
 def save_image_grid(in_list, out_dir, out_name, out_ext):
+    """saves a image grid in a form of 'List of List' of PIL image to file system.
+
+    A helper function to save image grid or 'list of list' images to file system, with proper sequence number naming.
+
+    Args:
+        in_list:
+            A 'list of list', the content of each element list should be PIL image objects.
+        out_dir:
+            A valid path string, to where the files would be written to.
+        out_name:
+            A string, the file name prefix you would like to save.
+            The output file names will be:
+                out_name_1_1, out_name_1_2, ... , out_name_1_N, 
+                out_name_2_1, out_name_2_2, ... , out_name_2_N,
+                , .... ,
+                out_name_M_1, out_name_M_2, ... , out_name_M_N
+        out_ext:
+            The file extension name, like jpg, png, ...
+
+    Returns:
+        All the images in 'in_list' will be saved to 'out_dir', one by one.
+
+        Each list element of the 'list of list' will be treated as a 'row' of images, all the element list will be saved
+        'row by row'. In each 'row', the PIL Image objects will be saved one by one, each as a 'column'.
+
+        For example, if 'out_name' is 'my slice', 'out_ext' is 'jpg', the final output files will be:
+            my_slice_1_1.jpg, my_slice_1_2.jpg, ... , my_slice_1_N.jpg, 
+            my_slice_2_1.jpg, my_slice_2_2.jpg, ... , my_slice_2_N.jpg,
+            , .... ,
+            my_slice_M_1.jpg, my_slice_M_2.jpg, ... , my_slice_M_N.jpg
+
+    Raises:
+        KeyError:
+            If the output format could not be determined from the file name. (from PIL)
+            The 'out_ext' may be a invalid value, which cannot be recognized by PIL. Check PIL's document for detail.
+        IOError:
+            If the file could not be written. The file may have been created, and may contain partial data. (from PIL)
+
+        All the exceptions above is raised from PIL's image.save() method. Check PIL's document for details.
+
+    """
     count = 1
     for sub_slice_list in in_list:
         assert sub_slice_list
@@ -626,7 +891,73 @@ def save_image_grid(in_list, out_dir, out_name, out_ext):
         count += 1
 
 
-# Standalone sub-command functions for argparse, so it can dispatch accordingly directly without extra work.
+# helper function to get current working directory
+def get_current_cwd():
+    """Gets current working directory
+
+    Returns: current working directory returned by os.getcwd()
+
+    """
+    return os.getcwd()
+
+
+# helper function to get the basename separated from the path(if any)
+def get_file_basename_without_path(file_name):
+    """Gets the basename (pure file name without any path) from a given filename (may contain path)
+
+    Returns: the pure filename of the 'basename' of the file.
+
+    """
+    return os.path.basename(file_name)
+
+
+# helper function to split a file name to a base name and a ext name
+def get_file_bare_name_and_ext_name(file_name):
+    """Splits file_name to a base name (the part without ext) and a ext name (the dot part)
+
+    This helper function helps you to easily extract the bare file name (without ext) from the type name (the ext name)
+    The names are determined by this way:
+        Find the last dot ('.') ,
+        the name to the left of the dot, is the bare name,
+        the name to the right of the dot, is the ext name.
+    This will work fine in almost all 'normal' cased. If your filename is a 'anomaly', it may not work for you.
+
+    For example:
+        get_file_bare_name_and_ext_name("this.is.a.image-file.jpg")
+        will return: ("this.is.a.image-file", "jpg")
+        you can use the tuple return like this directly:
+            my_bare_name, my_ext = get_file_bare_name_and_ext_name("this.is.a.image-file.jpg")
+
+    Args:
+        file_name: a string, the file name you want to split.
+
+    Returns:
+        A 2-element tuple of string, first element is the base name, second is the ext name.
+        like this: ("this.is.a.image-file", "jpg")
+
+    Raises:
+        ValueError:
+            If 'file_name' is empty, or does not contain any dot (without dot, the ext name cannot be determined).
+        TypeError:
+            If 'file_name' is not a string. you can try str(your_arg).
+
+    """
+    if not file_name:
+        raise ValueError("'filename' is a mandatory field, it cannot be empty.")
+    if not isinstance(file_name, str):
+        raise TypeError("'filename' should be a string, check the argument, or try str(your_arg)")
+    file_name_split = file_name.split('.')
+    if len(file_name_split) < 2:
+        raise ValueError("'filename' does not contain any '.' (dot), so the ext name cannot be determined.")
+    # get the last element of the list, which should be the ext name.
+    file_name_ext = str(file_name_split.pop())
+    # join remaining elements in the list, if any, in case the original file name contains '.'
+    file_name_without_ext = ''.join(file_name_split)
+    # return is a tuple
+    return file_name_without_ext, file_name_ext
+
+
+# Standalone sub-command functions for argparse, so it can dispatch accordingly without extra work.
 
 # standalone horizontal
 def _standalone_horizontal_slice(arguments):
@@ -957,15 +1288,10 @@ def main(argv):
     assert output_slices
 
     # get current working directory as the output dir. later we will pass the it to the file saving functions.
-    working_dir = os.getcwd()
+    working_dir = get_current_cwd()
     # get the pure file name of the input file, input may be a path, so we have to make sure path part not there.
-    file_name_original = os.path.basename(arguments.file_name)
-    # split the original file name to a list, separated by '.'
-    file_name_split = file_name_original.split('.')
-    # get the last element of the list, which should be the ext name.
-    file_name_ext = str(file_name_split.pop())
-    # join remaining elements in the list, if any, in case the original file name contains '.'
-    file_name_without_ext = ''.join(file_name_split)
+    file_name_original = get_file_basename_without_path(arguments.file_name)
+    file_name_without_ext, file_name_ext = get_file_bare_name_and_ext_name(file_name_original)
 
     # save the output slices to current working directory
     if isinstance(output_slices[0], Image.Image):
