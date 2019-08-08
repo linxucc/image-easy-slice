@@ -911,8 +911,8 @@ def get_file_basename_without_path(file_name):
     return os.path.basename(file_name)
 
 
-# helper function to split a file name to a base name and a ext name
-def get_file_bare_name_and_ext_name(file_name):
+# helper function to split a file name to a pure file name and a ext name
+def split_pure_file_name_from_ext_name(file_name):
     """Splits file_name to a base name (the part without ext) and a ext name (the dot part)
 
     This helper function helps you to easily extract the bare file name (without ext) from the type name (the ext name)
@@ -923,16 +923,16 @@ def get_file_bare_name_and_ext_name(file_name):
     This will work fine in almost all 'normal' cased. If your filename is a 'anomaly', it may not work for you.
 
     For example:
-        get_file_bare_name_and_ext_name("this.is.a.image-file.jpg")
+        split_pure_file_name_from_ext_name("this.is.a.image-file.jpg")
         will return: ("this.is.a.image-file", "jpg")
         you can use the tuple return like this directly:
-            my_bare_name, my_ext = get_file_bare_name_and_ext_name("this.is.a.image-file.jpg")
+            my_pure_name, my_ext = split_pure_file_name_from_ext_name("this.is.a.image-file.jpg")
 
     Args:
         file_name: a string, the file name you want to split.
 
     Returns:
-        A 2-element tuple of string, first element is the base name, second is the ext name.
+        A 2-element tuple of string, the first element is the pure file name, the second is the ext name.
         like this: ("this.is.a.image-file", "jpg")
 
     Raises:
@@ -1140,8 +1140,8 @@ def main(argv):
     # Define argument patterns.
 
     # Patterns Explained:
-    #   image-slice.py [FILE_NAME] vertical|horizontal| (-e SLICES, -s STEP_SIZE, -r RATIO_STRING)
-    #   image-slice.py [FILE_NAME} grid (-ve, -vs, -vr) (-he, -hs, -hr)
+    #   image_slice.py [FILE_NAME] vertical|horizontal| (-e SLICES, -s STEP_SIZE, -r RATIO_STRING)
+    #   image_slice.py [FILE_NAME} grid (-ve, -vs, -vr) (-he, -hs, -hr)
     # The file_name is the only global top level argument, it's the image file to be slice.
     # Then we use 3 subprograms to do the vertical, horizontal, grid slice separately.
     # In each subprogram, you provide how to slice.
@@ -1196,7 +1196,7 @@ def main(argv):
 
     # Grid slice has a totally different argument rule.
     # In the grid case, the sub command takes arguments like this:
-    # image-slice.py [FILE_NAME] grid
+    # image_slice.py [FILE_NAME] grid
     #       (-ve SLICES_NUM, -vs STEP_SIZE, -vr RATIO_STR) (-he SLICES_NUM, -hs STEP_SIZE, -hr RATIO_STR)
     # Both direction should be specified, because it's a grid.
     # The program will slice the image in each direction accordingly.
@@ -1271,7 +1271,7 @@ def main(argv):
         arguments = parser.parse_args(argv)
     else:
         # called directly from command-line, it's the case this module is executed directly.
-        # parse call with no args will handle the 2 command situation properly, like python image-slice.py
+        # parse call with no args will handle the 2 command situation properly, like python image_slice.py
         # otherwise the second command, in this case it's the script name, will be recognized to first real argument.
         arguments = parser.parse_args()
     # print(arguments)
@@ -1291,7 +1291,7 @@ def main(argv):
     working_dir = get_current_cwd()
     # get the pure file name of the input file, input may be a path, so we have to make sure path part not there.
     file_name_original = get_file_basename_without_path(arguments.file_name)
-    file_name_without_ext, file_name_ext = get_file_bare_name_and_ext_name(file_name_original)
+    file_name_without_ext, file_name_ext = split_pure_file_name_from_ext_name(file_name_original)
 
     # save the output slices to current working directory
     if isinstance(output_slices[0], Image.Image):
@@ -1308,10 +1308,10 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    # When image-slice.py is called directly from the command line, argparse should fetch the args directly.
-    # That is because if a command is a 2-word combination, like 'python image-slice.py',
+    # When image_slice.py is called directly from the command line, argparse should fetch the args directly.
+    # That is because if a command is a 2-word combination, like 'python image_slice.py',
     # it will not be treated as a single 2-word command, but a 1-word command and a argument.
     # But if it's fetched directly, this case will be fine.
-    # 'python image-slice.py' will be treated as a whole command in the argv[0],
-    # not 'python' in argv[0], 'image-slice.py' in argv[1] as the first argument.
+    # 'python image_slice.py' will be treated as a whole command in the argv[0],
+    # not 'python' in argv[0], 'image_slice.py' in argv[1] as the first argument.
     main(argv=None)
